@@ -1,0 +1,3170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Chit Funds – Management Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<!-- Firebase SDK (Firestore Compat – works with file:// protocol) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+  /* ── LIGHT MODE (default) ── */
+  :root {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface2: #eef0f5;
+    --border: #dde0e8;
+    --accent: #c9952e;
+    --accent2: #3a6ad4;
+    --accent3: #1a9e65;
+    --danger: #d43a5a;
+    --text: #1a1d28;
+    --text2: #5a5f72;
+    --text3: #8b90a0;
+    --radius: 12px;
+    --radius-sm: 7px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --row-hover: rgba(0,0,0,0.03);
+    --tooltip-bg: #ffffff;
+    --on-accent: #1a1d28;
+  }
+  /* ── DARK MODE ── */
+  html.dark-mode {
+    --bg: #0f1117;
+    --surface: #181c27;
+    --surface2: #1e2435;
+    --border: #2a3045;
+    --accent: #e8b84b;
+    --accent2: #4b7de8;
+    --accent3: #4be8a0;
+    --danger: #e84b6a;
+    --text: #e8eaf2;
+    --text2: #8b92a8;
+    --text3: #5a6278;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --row-hover: rgba(255,255,255,0.03);
+    --tooltip-bg: #252b3d;
+    --on-accent: #0f1117;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 28px;
+    display: flex;
+    align-items: center;
+    height: 60px;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.35rem;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-accent); font-weight: 700; font-size: 1rem;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .header-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    color: var(--text2);
+  }
+  .header-badge span { color: var(--accent3); font-weight: 600; }
+  .avatar {
+    width: 34px; height: 34px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; flex: 1; min-height: calc(100vh - 60px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  .nav-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 10px 6px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 400;
+    color: var(--text2);
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active {
+    background: rgba(232, 184, 75, 0.12);
+    border-color: rgba(232, 184, 75, 0.25);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--on-accent);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main { flex: 1; overflow: hidden; }
+  .tab-content { display: none; padding: 28px; animation: fadeIn 0.2s; }
+  .tab-content.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── PAGE TITLE ── */
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 1.7rem;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .page-sub { color: var(--text2); font-size: 0.85rem; margin-bottom: 24px; }
+
+  /* ── STAT CARDS ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.15;
+  }
+  .stat-card.gold::before { background: var(--accent); }
+  .stat-card.blue::before { background: var(--accent2); }
+  .stat-card.green::before { background: var(--accent3); }
+  .stat-card.red::before { background: var(--danger); }
+  .stat-label { font-size: 0.75rem; color: var(--text2); font-weight: 500; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.9rem; font-weight: 300; color: var(--text); line-height: 1; }
+  .stat-value span { font-size: 0.85rem; color: var(--text2); font-weight: 400; margin-left: 2px; }
+  .stat-delta { font-size: 0.75rem; margin-top: 8px; color: var(--accent3); }
+  .stat-delta.neg { color: var(--danger); }
+  .stat-icon { position: absolute; top: 18px; right: 18px; opacity: 0.3; font-size: 1.5rem; }
+
+  /* ── SECTIONS ── */
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 20px; }
+  .section-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+  }
+  .section-title { font-size: 0.95rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .section-body { padding: 20px; }
+
+  /* ── TABLES ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  thead th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+  }
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: var(--row-hover); }
+  tbody td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(42,48,69,0.5);
+    color: var(--text2);
+    vertical-align: middle;
+  }
+  tbody td:first-child { color: var(--text); font-weight: 500; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ── PILLS / BADGES ── */
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+  }
+  .pill-green { background: rgba(75,232,160,0.12); color: var(--accent3); }
+  .pill-gold { background: rgba(232,184,75,0.12); color: var(--accent); }
+  .pill-blue { background: rgba(75,125,232,0.12); color: var(--accent2); }
+  .pill-red { background: rgba(232,75,106,0.12); color: var(--danger); }
+  .pill-gray { background: rgba(139,146,168,0.12); color: var(--text2); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { background: #f0c65a; }
+  .btn-secondary { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text3); }
+  .btn-sm { padding: 4px 10px; font-size: 0.76rem; }
+  .btn-danger { background: rgba(232,75,106,0.15); color: var(--danger); border: 1px solid rgba(232,75,106,0.3); }
+  .btn-success { background: rgba(75,232,160,0.15); color: var(--accent3); border: 1px solid rgba(75,232,160,0.3); }
+
+  /* ── FORMS ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 0.75rem; font-weight: 600; color: var(--text2); letter-spacing: 0.03em; }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-group select option { background: var(--surface2); }
+  .form-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    width: 680px;
+    max-width: 95vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.25s;
+  }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .modal-head {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-family: 'DM Serif Display', serif; font-size: 1.2rem; }
+  .modal-close { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.3rem; line-height: 1; padding: 4px; }
+  .modal-close:hover { color: var(--text); }
+  .modal-body { padding: 24px; }
+  .modal-foot { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* ── PROGRESS BARS ── */
+  .progress-wrap { display: flex; align-items: center; gap: 10px; }
+  .progress-bar-bg { flex: 1; background: var(--bg); border-radius: 20px; height: 6px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.4s; }
+  .progress-pct { font-size: 0.75rem; color: var(--text2); min-width: 30px; text-align: right; }
+
+  /* ── SEARCH / FILTER BAR ── */
+  .filter-bar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+  .search-input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    padding: 7px 12px 7px 34px;
+    font-family: inherit;
+    font-size: 0.84rem;
+    outline: none;
+    width: 220px;
+    transition: border-color 0.15s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238b92a8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: 10px center;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .filter-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 7px 12px;
+    font-family: inherit;
+    font-size: 0.84rem;
+    outline: none;
+    cursor: pointer;
+  }
+
+  /* ── PAYMENT GRID ── */
+  .payment-month-header {
+    display: grid;
+    grid-template-columns: 180px repeat(20, minmax(90px, 1fr));
+    gap: 0;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text3);
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .payment-month-header div { padding: 10px 8px; border-right: 1px solid var(--border); }
+  .pmh-month { text-align: center; }
+
+  .payment-row {
+    display: grid;
+    grid-template-columns: 180px repeat(20, minmax(90px, 1fr));
+    border-bottom: 1px solid rgba(42,48,69,0.5);
+    transition: background 0.1s;
+    min-width: fit-content;
+  }
+  .payment-row:hover { background: var(--row-hover); }
+  .payment-row > div { padding: 8px; border-right: 1px solid rgba(42,48,69,0.3); display: flex; align-items: center; }
+  .member-cell { font-size: 0.82rem; font-weight: 500; color: var(--text); gap: 8px; }
+  .member-num { font-size: 0.7rem; color: var(--text3); }
+  .payment-cell { justify-content: center; }
+  .pay-dot {
+    width: 28px; height: 28px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .pay-dot.paid { background: rgba(75,232,160,0.15); color: var(--accent3); }
+  .pay-dot.pending { background: rgba(232,184,75,0.12); color: var(--accent); }
+  .pay-dot.overdue { background: rgba(232,75,106,0.12); color: var(--danger); }
+  .pay-dot.na { background: rgba(42,48,69,0.3); color: var(--text3); cursor: default; }
+  .pay-dot:not(.na):hover { transform: scale(1.15); }
+
+  /* ── DIVVY WINNER ── */
+  .auction-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(232,184,75,0.12);
+    border: 1px solid rgba(232,184,75,0.25);
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.72rem;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ── TOOLTIP ── */
+  [data-tip] { position: relative; cursor: help; }
+  [data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%; transform: translateX(-50%);
+    background: var(--tooltip-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 50;
+  }
+  [data-tip]:hover::after { opacity: 1; }
+
+  /* ── SUMMARY RING ── */
+  .ring-wrap { display: flex; align-items: center; gap: 20px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring-labels { display: flex; flex-direction: column; gap: 6px; }
+  .ring-label-item { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: var(--text2); }
+  .ring-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── DASHBOARD CHART BARS ── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding-top: 10px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+  .bar { width: 100%; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, var(--accent2), rgba(75,125,232,0.4)); transition: height 0.4s; min-height: 4px; }
+  .bar-lbl { font-size: 0.65rem; color: var(--text3); white-space: nowrap; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 18px;
+    font-size: 0.84rem;
+    color: var(--text);
+    box-shadow: var(--shadow);
+    z-index: 500;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  .toast-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent3); }
+
+  /* ── RESPONSIVE SCROLL ── */
+  .scroll-x { overflow-x: auto; }
+
+  /* ── ACTIVITY FEED ── */
+  .activity-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(42,48,69,0.4); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.85rem; }
+  .activity-content { flex: 1; }
+  .activity-title { font-size: 0.84rem; color: var(--text); }
+  .activity-meta { font-size: 0.74rem; color: var(--text3); margin-top: 2px; }
+
+  /* ── TWO-COL LAYOUT ── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* ── CHIT GROUPS CARDS ── */
+  .group-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .group-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+  .group-card:hover { border-color: var(--accent2); transform: translateY(-2px); }
+  .group-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .group-name { font-family: 'DM Serif Display', serif; font-size: 1.2rem; color: var(--text); }
+  .group-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .group-meta-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 10px; }
+  .gmi-label { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; }
+  .gmi-value { font-size: 0.95rem; font-weight: 500; color: var(--text); margin-top: 2px; }
+
+  /* ── CHIT DETAILS TABLE ── */
+  .chit-detail-section { margin-top: 16px; }
+  .month-selector { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .month-btn {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 0.76rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .month-btn.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+  .month-btn:hover:not(.active) { border-color: var(--text3); color: var(--text); }
+
+  /* ── INPUT INLINE EDIT ── */
+  .inline-input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    width: 90px;
+    outline: none;
+  }
+  .inline-input:focus { border-color: var(--accent); }
+
+  /* scroll to top */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+  /* ── THEME TOGGLE ── */
+  .theme-toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    cursor: pointer;
+    transition: background 0.3s, border-color 0.3s;
+    flex-shrink: 0;
+  }
+  .theme-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    transition: transform 0.3s;
+  }
+  html.dark-mode .theme-toggle::after {
+    transform: translateX(20px);
+  }
+  .theme-toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .theme-toggle-icon {
+    font-size: 1rem;
+    line-height: 1;
+    user-select: none;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  .login-screen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .login-screen.hidden { display: none; }
+  .login-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px 36px;
+    width: 100%; max-width: 380px;
+    text-align: center;
+  }
+  .login-box .logo { justify-content: center; margin-bottom: 24px; font-size: 1.5rem; }
+  .login-box h2 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: 6px; }
+  .login-box p { font-size: 0.82rem; color: var(--text2); margin-bottom: 20px; }
+  .login-box input {
+    width: 100%; padding: 10px 14px; margin-bottom: 14px;
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--surface2); color: var(--text); font-size: 0.9rem;
+  }
+  .login-box input:focus { outline: none; border-color: var(--accent); }
+  .login-box .btn { width: 100%; padding: 10px; font-size: 0.95rem; }
+  .login-error { color: var(--danger); font-size: 0.8rem; margin-bottom: 10px; min-height: 1.2em; }
+  .logout-btn {
+    background: none; border: none; border-radius: 6px;
+    padding: 6px 14px; font-size: 0.82rem; color: var(--danger); cursor: pointer;
+    width: 100%; text-align: left;
+  }
+  .logout-btn:hover { background: rgba(232,75,106,0.08); }
+  .avatar-wrap {
+    position: relative;
+  }
+  .avatar-dropdown {
+    display: none;
+    position: absolute; right: 0; top: calc(100% + 8px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    min-width: 200px; z-index: 200; overflow: hidden;
+  }
+  .avatar-dropdown.open { display: block; }
+  .avatar-dropdown-header {
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .avatar-dropdown-header .adh-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+  .avatar-dropdown-header .adh-role { font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
+  .avatar-dropdown-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 16px; font-size: 0.82rem; color: var(--text2);
+    cursor: pointer; border: none; background: none; width: 100%; text-align: left;
+  }
+  .avatar-dropdown-item:hover { background: var(--surface2); }
+  .avatar-dropdown-divider { height: 1px; background: var(--border); }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="logo">
+      <div class="logo-icon">US</div>
+      US Chit Funds
+    </div>
+    <h2>Welcome Back</h2>
+    <p>Sign in to manage your chit fund portal</p>
+    <div class="login-error" id="login-error"></div>
+    <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+    <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<!-- EMERGENCY LOGIN FALLBACK — defined before main script, immune to later JS errors -->
+<script>
+(function() {
+  window.doLogin = function() {
+    var u = (document.getElementById('login-username').value || '').trim().toLowerCase();
+    var p = document.getElementById('login-password').value || '';
+    var errEl = document.getElementById('login-error');
+    if (!u || !p) { errEl.textContent = 'Please enter username and password'; return; }
+    if (u === 'admin' && p === 'admin123') {
+      var user = { username: 'admin', password: 'admin123', name: 'Admin', role: 'admin' };
+      try { sessionStorage.setItem('chitUser', JSON.stringify(user)); } catch(e) {}
+      window.currentUser = user;
+      var ls = document.getElementById('login-screen');
+      if (ls) ls.classList.add('hidden');
+      // Populate header bits if they exist
+      var hn = document.getElementById('header-admin-name'); if (hn) hn.textContent = 'Admin';
+      var ha = document.getElementById('header-avatar'); if (ha) ha.textContent = 'A';
+      var dn = document.getElementById('dropdown-name'); if (dn) dn.textContent = 'Admin';
+      var dr = document.getElementById('dropdown-role'); if (dr) dr.textContent = 'Admin';
+      errEl.textContent = '';
+      return;
+    }
+    errEl.textContent = 'Invalid username or password (try admin / admin123)';
+  };
+  // Enter key support
+  document.addEventListener('DOMContentLoaded', function() {
+    var pw = document.getElementById('login-password');
+    var un = document.getElementById('login-username');
+    if (pw) pw.addEventListener('keydown', function(e){ if (e.key === 'Enter') window.doLogin(); });
+    if (un) un.addEventListener('keydown', function(e){ if (e.key === 'Enter') { var p = document.getElementById('login-password'); if (p) p.focus(); } });
+  });
+})();
+</script>
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">US</div>
+    US Chit Funds
+  </div>
+  <div class="header-badge">FY <span>2026–27</span></div>
+  <div class="header-right">
+    <span id="fb-status" style="font-size:0.72rem;padding:3px 10px;border-radius:12px;background:rgba(232,75,106,0.15);color:var(--danger);">⏳ Connecting…</span>
+    <div class="header-badge">Admin: <span id="header-admin-name">–</span></div>
+    <div class="avatar-wrap">
+      <div class="avatar" id="header-avatar" onclick="toggleAvatarMenu()" style="cursor:pointer;">–</div>
+      <div class="avatar-dropdown" id="avatar-dropdown">
+        <div class="avatar-dropdown-header">
+          <div class="adh-name" id="dropdown-name">–</div>
+          <div class="adh-role" id="dropdown-role">–</div>
+        </div>
+        <button class="avatar-dropdown-item" onclick="switchTab('settings',document.querySelector('[onclick*=settings]'));closeAvatarMenu()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Settings
+        </button>
+        <div class="avatar-dropdown-divider"></div>
+        <button class="logout-btn" onclick="doLogout()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:6px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Logout
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="nav-label">Main</div>
+    <div class="nav-item active" onclick="switchTab('dashboard', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="switchTab('customers', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Customer Info
+      <span class="nav-badge">80</span>
+    </div>
+    <div class="nav-item" onclick="switchTab('chits', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+      Chit Info
+    </div>
+    <div class="nav-item" onclick="switchTab('payments', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      Payment Info
+    </div>
+
+    <div class="nav-label">Management</div>
+    <!-- <div class="nav-item" onclick="switchTab('auctions', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m2 20 7-7"/><path d="m17 3 4 4-9.5 9.5-4-4Z"/><path d="m6 15 3 3"/></svg>
+      Auctions
+    </div> -->
+    <div class="nav-item" onclick="switchTab('reports', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Reports
+    </div>
+    <div class="nav-item" onclick="switchTab('settings', this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 1 1-14.14 0"/></svg>
+      Settings
+    </div>
+    <div style="margin-top:auto;padding-top:16px;border-top:1px solid var(--border);">
+      <div class="theme-toggle-wrap" style="justify-content:flex-start;">
+        <span class="theme-toggle-icon" id="theme-icon">☀️</span>
+        <div class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark/light mode"></div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main class="main">
+
+    <!-- ════════════════════════════ DASHBOARD ════════════════════════════ -->
+    <div class="tab-content active" id="tab-dashboard">
+      <div class="page-title">Dashboard</div>
+      <div class="page-sub">Overview of all active chit groups · FY 2026–27</div>
+
+      <div class="stats-grid">
+        <div class="stat-card gold">
+          <div class="stat-label">Total Portfolio</div>
+          <div class="stat-value">₹48<span>L</span></div>
+          <div class="stat-delta">↑ 12% from last FY</div>
+          <div class="stat-icon">💰</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Active Groups</div>
+          <div class="stat-value">12</div>
+          <div class="stat-delta">4 groups completing soon</div>
+          <div class="stat-icon">📋</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Members Enrolled</div>
+          <div class="stat-value">80</div>
+          <div class="stat-delta">↑ 5 new this month</div>
+          <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-label">Overdue Payments</div>
+          <div class="stat-value">7</div>
+          <div class="stat-delta neg">↑ 2 this month</div>
+          <div class="stat-icon">⚠️</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Collected This Month</div>
+          <div class="stat-value">₹2.4<span>L</span></div>
+          <div class="stat-delta">↑ 8% vs last month</div>
+          <div class="stat-icon">📈</div>
+        </div>
+<!--         <div class="stat-card blue">
+          <div class="stat-label">Auctions This Month</div>
+          <div class="stat-value">4</div>
+          <div class="stat-delta">2 pending confirmation</div>
+          <div class="stat-icon">🔨</div>
+        </div> -->
+      </div>
+
+      <div class="two-col">
+        <!-- ACTIVE GROUPS SUMMARY -->
+        <div class="section">
+          <div class="section-head">
+            <div class="section-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>
+              Active Chit Groups
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="switchTab('chits', document.querySelector('[onclick*=chits]'))">View All</button>
+          </div>
+          <div class="section-body" style="padding:0;">
+            <div class="tbl-wrap">
+              <table>
+                <thead>
+                  <tr><th>Group</th><th>Value</th><th>Members</th><th>Month</th><th>Progress</th><th>Status</th></tr>
+                </thead>
+                <tbody id="dashboard-groups"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- COLLECTION CHART + ACTIVITY -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent2)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Monthly Collections
+              </div>
+            </div>
+            <div class="section-body">
+              <div class="bar-chart" id="bar-chart"></div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;" id="bar-labels"></div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-head">
+              <div class="section-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Recent Activity
+              </div>
+            </div>
+            <div class="section-body" style="padding: 10px 16px;">
+              <div id="activity-feed"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYMENT SUMMARY RING -->
+      <div class="section">
+        <div class="section-head">
+          <div class="section-title">Payment Summary – Current Month</div>
+        </div>
+        <div class="section-body">
+          <div style="display:flex;gap:40px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px;">Payment Status Breakdown</div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:14px 20px;">
+                  <div style="font-size:1.8rem;font-weight:300;color:var(--accent3);">63</div>
+                  <div style="font-size:0.72rem;color:var(--text3);margin-top:4px;">Paid</div>
+                </div>
+                <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:14px 20px;">
+                  <div style="font-size:1.8rem;font-weight:300;color:var(--accent);">10</div>
+                  <div style="font-size:0.72rem;color:var(--text3);margin-top:4px;">Pending</div>
+                </div>
+                <div style="text-align:center;background:var(--surface2);border-radius:10px;padding:14px 20px;">
+                  <div style="font-size:1.8rem;font-weight:300;color:var(--danger);">7</div>
+                  <div style="font-size:0.72rem;color:var(--text3);margin-top:4px;">Overdue</div>
+                </div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:200px;">
+              <div style="font-size:0.78rem;color:var(--text2);margin-bottom:12px;">Collection Rate by Group</div>
+              <div id="collection-rates"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════ CUSTOMER INFO ════════════════════════════ -->
+    <div class="tab-content" id="tab-customers">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="page-title">Customer Info</div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-customer')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Customer
+        </button>
+      </div>
+      <div class="page-sub">All enrolled chit fund members</div>
+
+      <div class="filter-bar">
+        <input type="text" class="search-input" placeholder="Search by name, phone, ID…" oninput="filterCustomers(this.value)">
+        <select class="filter-select" onchange="filterCustomersByGroup(this.value)">
+          <option value="">All Groups</option>
+          <option>1LA</option><option>1LB</option><option>1LC</option><option>1LD</option>
+          <option>2LA</option><option>2LB</option><option>2LC</option><option>2LD</option>
+          <option>3LA</option><option>3LB</option><option>3LC</option><option>3LD</option>
+        </select>
+        <select class="filter-select">
+          <option>All Status</option>
+          <option>Active</option>
+          <option>Completed</option>
+          <option>Defaulter</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-body" style="padding:0;">
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th><th>Aadhaar</th><th>PAN</th><th>Phone</th><th>Email</th><th>DOB</th>
+                  <th>Address</th><th>Group</th><th>Join Date</th>
+                  <th>Bank</th><th>A/C No</th><th>IFSC</th><th>Nominee</th><th>KYC</th><th>CIBIL</th><th>Agent</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="customer-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════ CHIT INFO ════════════════════════════ -->
+    <div class="tab-content" id="tab-chits">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="page-title">Chit Info</div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-chit')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Chit Group
+        </button>
+      </div>
+      <div class="page-sub">All chit groups with details and member breakdown</div>
+
+      <div class="filter-bar">
+        <input type="text" class="search-input" placeholder="Search group…">
+        <select class="filter-select">
+          <option>All Amounts</option>
+          <option>₹1 Lakh</option><option>₹2 Lakh</option><option>₹3 Lakh</option>
+        </select>
+        <select class="filter-select">
+          <option>All Status</option>
+          <option>Active</option><option>Completed</option><option>Upcoming</option>
+        </select>
+      </div>
+
+      <div class="group-grid" id="chit-group-cards"></div>
+    </div>
+
+    <!-- ════════════════════════════ PAYMENT INFO ════════════════════════════ -->
+    <div class="tab-content" id="tab-payments">
+      <div class="page-title">Payment Info</div>
+      <div class="page-sub">Filter by month to view and manage payments for each chit group</div>
+
+      <!-- Controls -->
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:20px;">
+        <div class="form-group" style="flex-direction:row;align-items:center;gap:8px;">
+          <label style="margin:0;white-space:nowrap;">Month</label>
+          <select class="filter-select" id="pay-month-sel" onchange="onPayMonthChange()"></select>
+        </div>
+        <div class="form-group" style="flex-direction:row;align-items:center;gap:8px;">
+          <label style="margin:0;white-space:nowrap;">Chit Group</label>
+          <select class="filter-select" id="pay-group-sel" onchange="renderPaymentMonthView()"></select>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="exportCSV()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export
+        </button>
+      </div>
+
+      <!-- Summary row -->
+      <div class="stats-grid" style="margin-bottom:16px;" id="pay-stats"></div>
+
+      <!-- Single-month payment table -->
+      <div class="section" style="overflow:hidden;">
+        <div class="section-head">
+          <div class="section-title" id="pay-grid-title">Payment Details</div>
+          <div style="display:flex;gap:10px;align-items:center;font-size:0.76rem;color:var(--text2);">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(75,232,160,0.3);margin-right:4px;"></span>Paid</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(232,184,75,0.2);margin-right:4px;"></span>Partial Paid</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(232,75,106,0.2);margin-right:4px;"></span>Overdue</span>
+          </div>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead>
+              <tr><th>Member Name</th><th>Phone</th><th>Aadhaar</th><th>PAN</th><th>CIBIL Risk</th><th>Monthly Due</th><th>Overall Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>Profit</th><th>Receipt</th><th>WhatsApp</th></tr>
+            </thead>
+            <tbody id="pay-month-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div style="font-size:0.76rem;color:var(--text3);margin-top:10px;">💡 Click Edit to change payment status. Use Chit Info → Details for the full payment grid.</div>
+    </div>
+
+    <!-- ════════════════════════════ AUCTIONS ════════════════════════════ -->
+    <!-- <div class="tab-content" id="tab-auctions">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+        <div class="page-title">Auctions</div>
+        <button class="btn btn-primary" onclick="openModal('modal-add-auction')">Record Auction</button>
+      </div>
+      <div class="page-sub">Monthly bid auctions and prize distribution</div>
+
+      <div class="section" style="margin-bottom:20px;">
+        <div class="section-head"><div class="section-title">Auction History</div></div>
+        <div class="section-body" style="padding:0;">
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Group</th><th>Month</th><th>Date</th><th>Winner</th><th>Bid Amount</th><th>Chit Value</th><th>Commission</th><th>Dividend</th><th>Status</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="auction-table"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- ════════════════════════════ REPORTS ════════════════════════════ -->
+    <div class="tab-content" id="tab-reports">
+      <div class="page-title">Reports</div>
+      <div class="page-sub">Generate and export financial reports</div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:24px;">
+        <div class="group-card" onclick="toast('Generating report…')">
+          <div style="font-size:1.5rem;margin-bottom:8px;">📊</div>
+          <div style="font-weight:600;margin-bottom:4px;">Collection Report</div>
+          <div style="font-size:0.8rem;color:var(--text2);">Monthly/yearly collections by group</div>
+        </div>
+        <div class="group-card" onclick="toast('Generating report…')">
+          <div style="font-size:1.5rem;margin-bottom:8px;">⚠️</div>
+          <div style="font-weight:600;margin-bottom:4px;">Defaulter Report</div>
+          <div style="font-size:0.8rem;color:var(--text2);">Members with pending/overdue payments</div>
+        </div>
+        <div class="group-card" onclick="toast('Generating report…')">
+          <div style="font-size:1.5rem;margin-bottom:8px;"></div>
+          <div style="font-weight:600;margin-bottom:4px;">Member Statement</div>
+          <div style="font-size:0.8rem;color:var(--text2);">Individual member account summary</div>
+        </div>
+        <div class="group-card" onclick="toast('Generating report…')">
+          <div style="font-size:1.5rem;margin-bottom:8px;">💰</div>
+          <div style="font-weight:600;margin-bottom:4px;">Profit & Commission</div>
+          <div style="font-size:0.8rem;color:var(--text2);">Foreman earnings and commissions</div>
+        </div>
+        <div class="group-card" onclick="toast('Generating report…')">
+          <div style="font-size:1.5rem;margin-bottom:8px;">📅</div>
+          <div style="font-weight:600;margin-bottom:4px;">Maturity Report</div>
+          <div style="font-size:0.8rem;color:var(--text2);">Groups completing in next 3 months</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><div class="section-title">Quick Report Generator</div></div>
+        <div class="section-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Report Type</label>
+              <select><option>Collection Summary</option><option>Defaulter List</option><option>Member Statement</option></select>
+            </div>
+            <div class="form-group">
+              <label>Chit Group</label>
+              <select><option>All Groups</option><option>1LA</option><option>1LB</option><option>2LA</option><option>2LB</option><option>3LA</option><option>3LB</option></select>
+            </div>
+            <div class="form-group">
+              <label>From Month</label>
+              <input type="month" value="2024-04">
+            </div>
+            <div class="form-group">
+              <label>To Month</label>
+              <input type="month" value="2025-03">
+            </div>
+            <div class="form-group">
+              <label>Format</label>
+              <select><option>PDF</option><option>Excel</option><option>CSV</option></select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" onclick="toast('Report generated and downloaded!')">Generate Report</button>
+            <button class="btn btn-secondary">Preview</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════ SETTINGS ════════════════════════════ -->
+    <div class="tab-content" id="tab-settings">
+      <div class="page-title">Settings</div>
+      <div class="page-sub">Configure portal preferences and defaults</div>
+
+      <!-- User Management Section -->
+      <div class="section" style="margin-bottom:20px;">
+        <div class="section-head">
+          <div class="section-title">User Management</div>
+          <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-user')">+ Add User</button>
+        </div>
+        <div class="section-body">
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr><th>Username</th><th>Display Name</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+              </thead>
+              <tbody id="users-table"><tr><td colspan="5" style="text-align:center;color:var(--text3);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="section">
+          <div class="section-head"><div class="section-title">Company Info</div></div>
+          <div class="section-body">
+            <div class="form-grid" style="grid-template-columns:1fr;">
+              <div class="form-group"><label>Company Name</label><input type="text" value="US Chit Funds"></div>
+              <div class="form-group"><label>Registration No.</label><input type="text" value="US-CHT-2023-001"></div>
+              <div class="form-group"><label>Address</label><textarea rows="2">Giri Nagar, Kavundampalayam, Coimbatore, Tamil Nadu, India</textarea></div>
+              <div class="form-group"><label>Phone</label><input type="text" value="+91 9791604218"></div>
+              <div class="form-group"><label>Email</label><input type="text" value="admin@uschitfunds.com"></div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" onclick="toast('Settings saved!')">Save Changes</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div class="section">
+            <div class="section-head"><div class="section-title">Firebase Database</div></div>
+            <div class="section-body">
+              <div style="font-size:0.85rem;color:var(--text2);margin-bottom:12px;">Seed sample data into Firebase (first-time setup only). This uploads demo customers and payments.</div>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                <button class="btn btn-primary" onclick="seedFirebaseData()">🔥 Seed Sample Data</button>
+                <button class="btn btn-danger btn-sm" onclick="requireAdminAuth(function(){ clearFirebaseData(); })">Clear All Data</button>
+              </div>
+              <div id="fb-seed-status" style="font-size:0.78rem;color:var(--text3);margin-top:10px;"></div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-head"><div class="section-title">Notifications</div></div>
+            <div class="section-body">
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text2);">
+                  <input type="checkbox" checked> Payment due reminders (3 days before)
+                </label>
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text2);">
+                  <input type="checkbox" checked> Overdue payment alerts
+                </label>
+                <!--
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text2);">
+                  <input type="checkbox"> Auction reminders
+                </label>
+                -->
+                <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:0.85rem;color:var(--text2);">
+                  <input type="checkbox" checked> Group completion alerts
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- ADD CUSTOMER -->
+<div class="modal-overlay" id="modal-add-customer">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Add New Customer</div>
+      <button class="modal-close" onclick="closeModal('modal-add-customer')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input type="text" placeholder="e.g. Jeeva Raja"></div>
+        <div class="form-group"><label>Aadhaar Number *</label><input type="text" placeholder="1234 5678 9012" maxlength="14"></div>
+        <div class="form-group"><label>PAN Number *</label><input type="text" placeholder="ABCDE1234F" maxlength="10" style="text-transform:uppercase"></div>
+        <div class="form-group"><label>Phone *</label><input type="tel" placeholder="+91 "></div>
+        <div class="form-group"><label>Email</label><input type="email" placeholder="email@example.com"></div>
+        <div class="form-group"><label>Date of Birth</label><input type="date"></div>
+        <div class="form-group"><label>Address</label><input type="text" placeholder="Street address"></div>
+        <div class="form-group"><label>City</label><input type="text"></div>
+        <div class="form-group"><label>State</label><input type="text"></div>
+        <div class="form-group"><label>PIN Code</label><input type="text"></div>
+        <div class="form-group"><label>Chit Group *</label>
+          <select>
+            <option>Select group</option>
+            <option>1LA</option><option>1LB</option><option>1LC</option><option>1LD</option>
+            <option>2LA</option><option>2LB</option><option>2LC</option><option>2LD</option>
+            <option>3LA</option><option>3LB</option><option>3LC</option><option>3LD</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Member Number (1–20)</label><input type="number" min="1" max="20"></div>
+        <div class="form-group"><label>Bank Name</label><input type="text"></div>
+        <div class="form-group"><label>Account Number</label><input type="text"></div>
+        <div class="form-group"><label>IFSC Number</label><input type="text"></div>
+        <div class="form-group"><label>Nominee Name</label><input type="text"></div>
+        <div class="form-group"><label>Nominee Relation</label><select><option>Spouse</option><option>Parent</option><option>Child</option><option>Sibling</option><option>Other</option></select></div>
+        <div class="form-group"><label>Join Date</label><input type="date"></div>
+        <div class="form-group"><label>KYC Status</label><select><option>Pending</option><option>Verified</option><option>Rejected</option></select></div>        
+        <div class="form-group"><label>CIBIL Risk Level</label>
+          <select>
+            <option>Select risk level</option>
+            <option>Low</option>
+            <option>Medium</option>
+            <option>High</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Agent</label><input type="text" placeholder="Agent name"></div>
+        <div class="form-group"><label>Agent Commission</label><input type="text" placeholder="e.g. 2%"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-customer')">Cancel</button>
+      <button class="btn btn-primary" onclick="addCustomerFromModal()">Add Customer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CHIT GROUP -->
+<div class="modal-overlay" id="modal-add-chit">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-head">
+      <div class="modal-title">New Chit Group</div>
+      <button class="modal-close" onclick="closeModal('modal-add-chit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Group Name *</label><input type="text" id="chit-name" placeholder="e.g. 4LA"></div>
+        <div class="form-group"><label>Amount *</label><select id="chit-amount"><option value="100000">₹1,00,000 (1 Lakh)</option><option value="200000">₹2,00,000 (2 Lakh)</option><option value="300000">₹3,00,000 (3 Lakh)</option></select></div>
+        <div class="form-group"><label>Duration (months)</label><input type="number" id="chit-duration" value="20" onchange="generateInstallmentFields()"></div>
+        <div class="form-group"><label>Members</label><input type="number" id="chit-members" value="40"></div>
+        <div class="form-group"><label>Commission %</label><input type="number" id="chit-commission" value="5"></div>
+        <div class="form-group"><label>Start Date *</label><input type="date" id="chit-start"></div>
+        <div class="form-group"><label>Status</label><select id="chit-status"><option>Active</option><option>Upcoming</option></select></div>
+      </div>
+      <div style="margin-top:18px;">
+        <label style="font-weight:600;font-size:0.85rem;color:var(--text);margin-bottom:10px;display:block;">Monthly Installments *</label>
+        <div id="chit-installments-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-chit')">Cancel</button>
+      <button class="btn btn-primary" onclick="createChitGroup()">Create Group</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CHIT GROUP MODAL -->
+<div class="modal-overlay" id="modal-edit-chit">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-head">
+      <div class="modal-title">Edit Chit Group</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-chit')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-chit-orig-name">
+      <div class="form-grid">
+        <div class="form-group"><label>Group Name *</label><input type="text" id="edit-chit-name"></div>
+        <div class="form-group"><label>Amount *</label><select id="edit-chit-amount"><option value="100000">₹1,00,000 (1 Lakh)</option><option value="200000">₹2,00,000 (2 Lakh)</option><option value="300000">₹3,00,000 (3 Lakh)</option></select></div>
+        <div class="form-group"><label>Duration (months)</label><input type="number" id="edit-chit-duration" onchange="generateEditInstallmentFields()"></div>
+        <div class="form-group"><label>Members</label><input type="number" id="edit-chit-members"></div>
+        <div class="form-group"><label>Commission %</label><input type="number" id="edit-chit-commission"></div>
+        <div class="form-group"><label>Start Date *</label><input type="date" id="edit-chit-start"></div>
+      </div>
+      <div style="margin-top:18px;">
+        <label style="font-weight:600;font-size:0.85rem;color:var(--text);margin-bottom:10px;display:block;">Monthly Installments *</label>
+        <div id="edit-chit-installments-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;" onclick="deleteChitGroupFromEdit()">Delete</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-edit-chit')">Close</button>
+        <button class="btn btn-primary" onclick="saveChitGroup()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT EDIT MODAL -->
+<div class="modal-overlay" id="modal-edit-payment">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head">
+      <div class="modal-title">Edit Payment</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;margin-bottom:16px;">
+        <div style="font-size:0.78rem;color:var(--text2);">Member</div>
+        <div style="font-weight:600;" id="ep-member">–</div>
+        <div style="font-size:0.78rem;color:var(--text2);margin-top:8px;">Group · Month</div>
+        <div style="font-weight:600;" id="ep-group-month">–</div>
+      </div>
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="ep-status">
+            <option value="paid">Paid</option>
+            <option value="pending">Partial Paid</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Amount Paid (₹)</label>
+          <input type="number" id="ep-amount" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Payment Date</label>
+          <input type="date" id="ep-date">
+        </div>
+        <div class="form-group">
+          <label>Payment Mode</label>
+          <select id="ep-mode">
+            <option>Cash</option>
+            <option>Bank Transfer</option>
+            <option>Check</option>
+            <option>Zelle</option>
+            <option>Wire</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reference / Check No.</label>
+          <input type="text" id="ep-ref" placeholder="Optional">
+        </div>
+        <div class="form-group">
+          <label>Late Fee (₹)</label>
+          <input type="number" id="ep-late" value="0">
+        </div>
+        <div class="form-group">
+          <label>Notes</label>
+          <textarea id="ep-notes" rows="2" placeholder="Any remarks…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edit-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePayment()">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD AUCTION -->
+<div class="modal-overlay" id="modal-add-auction">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Record Auction</div>
+      <button class="modal-close" onclick="closeModal('modal-add-auction')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Chit Group *</label><select><option>1LA</option><option>1LB</option><option>2LA</option><option>2LB</option><option>3LA</option><option>3LB</option></select></div>
+        <div class="form-group"><label>Month *</label><input type="number" min="1" max="20" placeholder="1–20"></div>
+        <div class="form-group"><label>Auction Date *</label><input type="date"></div>
+        <div class="form-group"><label>Winner Name *</label><input type="text"></div>
+        <div class="form-group"><label>Chit Value (₹)</label><input type="number"></div>
+        <div class="form-group"><label>Bid Amount (₹)</label><input type="number" placeholder="Amount foregone"></div>
+        <div class="form-group"><label>Commission %</label><input type="number" value="5"></div>
+        <div class="form-group"><label>Dividend per Member</label><input type="number" placeholder="Auto-calculated"></div>
+        <div class="form-group"><label>Payment Issued Date</label><input type="date"></div>
+        <div class="form-group"><label>Payment Mode</label><select><option>Bank Transfer</option><option>Check</option><option>Wire</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-auction')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-add-auction');toast('Auction recorded!')">Save Auction</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK PAYMENT -->
+<div class="modal-overlay" id="modal-bulk-payment">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head">
+      <div class="modal-title">Bulk Payment Update</div>
+      <button class="modal-close" onclick="closeModal('modal-bulk-payment')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-group"><label>Chit Group</label><select><option>1LA</option><option>1LB</option><option>All Groups</option></select></div>
+        <div class="form-group"><label>Month</label><input type="number" min="1" max="20" value="5"></div>
+        <div class="form-group"><label>Set Status To</label><select><option>Paid</option><option>Partial Paid</option><option>Overdue</option></select></div>
+        <div class="form-group"><label>Payment Date</label><input type="date"></div>
+        <div class="form-group"><label>Payment Mode</label><select><option>Cash</option><option>Bank Transfer</option><option>Check</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-bulk-payment')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-bulk-payment');toast('Bulk update applied!')">Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW CUSTOMER MODAL -->
+<div class="modal-overlay" id="modal-view-customer">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="vc-name">Customer Details</div>
+      <button class="modal-close" onclick="closeModal('modal-view-customer')">✕</button>
+    </div>
+    <div class="modal-body" id="vc-body"></div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn btn-danger btn-sm" onclick="deleteCustomerFromModal()">Delete</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-view-customer')">Close</button>
+        <button class="btn btn-primary" onclick="saveCustomerFromModal()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CHIT GROUP DETAIL (full payment grid) -->
+<div class="modal-overlay" id="modal-chit-detail">
+  <div class="modal" style="width:95vw;max-width:95vw;">
+    <div class="modal-head">
+      <div class="modal-title" id="chit-detail-title">Chit Group Details</div>
+      <button class="modal-close" onclick="closeModal('modal-chit-detail')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <div class="stats-grid" style="margin-bottom:16px;" id="chit-detail-stats"></div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:0.76rem;color:var(--text2);margin-bottom:10px;">
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(75,232,160,0.3);margin-right:4px;"></span>Paid</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(232,184,75,0.2);margin-right:4px;"></span>Partial Paid</span>
+        <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:rgba(232,75,106,0.2);margin-right:4px;"></span>Overdue</span>
+      </div>
+      <div class="scroll-x">
+        <div id="chit-detail-grid" style="min-width:2000px;"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-chit-detail')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- INSTALLMENTS MODAL (monthly installments view) -->
+<div class="modal-overlay" id="modal-installments">
+  <div class="modal" style="width:90vw;max-width:720px;">
+    <div class="modal-head">
+      <div class="modal-title" id="installments-title">Monthly Installments</div>
+      <button class="modal-close" onclick="closeModal('modal-installments')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px;">
+      <div id="installments-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-installments')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN CONFIRM MODAL -->
+<div class="modal-overlay" id="modal-admin-confirm">
+  <div class="modal" style="width:380px;">
+    <div class="modal-head">
+      <div class="modal-title">Admin Verification</div>
+      <button class="modal-close" onclick="closeModal('modal-admin-confirm')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:16px;">Enter admin credentials to proceed with this action.</p>
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-group"><label>Admin Username</label><input type="text" id="admin-confirm-user" placeholder="Username" autocomplete="off"></div>
+        <div class="form-group"><label>Admin Password</label><input type="password" id="admin-confirm-pass" placeholder="Password" autocomplete="off"></div>
+      </div>
+      <div id="admin-confirm-error" style="color:var(--danger);font-size:0.8rem;min-height:1.2em;margin-top:4px;"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-admin-confirm')">Cancel</button>
+      <button class="btn btn-primary" onclick="verifyAdminAndProceed()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD USER MODAL -->
+<div class="modal-overlay" id="modal-add-user">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head">
+      <div class="modal-title">Add New User</div>
+      <button class="modal-close" onclick="closeModal('modal-add-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-group"><label>Display Name *</label><input type="text" id="new-user-name" placeholder="e.g. Jeeva Raja"></div>
+        <div class="form-group"><label>Username *</label><input type="text" id="new-user-username" placeholder="e.g. jeeva" autocomplete="off"></div>
+        <div class="form-group"><label>Password *</label><input type="password" id="new-user-password" placeholder="Min 4 characters" autocomplete="new-password"></div>
+        <div class="form-group"><label>Role</label><select id="new-user-role"><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="closeModal('modal-add-user')">Cancel</button>
+      <button class="btn btn-primary" onclick="addUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"><div class="toast-dot"></div><span id="toast-msg">Done!</span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// ██  FIREBASE CONFIGURATION
+// ══════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey:            "AIzaSyDrPDVpGqOKXw9MPPYT-9ICBg7bjLTWV3I",
+  authDomain:        "us-chit-funds.firebaseapp.com",
+  projectId:         "us-chit-funds",
+  storageBucket:     "us-chit-funds.firebasestorage.app",
+  messagingSenderId: "317389167013",
+  appId:             "1:317389167013:web:bc943909ee6063f15d704c",
+  measurementId:     "G-9T9RNJZ8CL"
+};
+
+let db;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+} catch (e) {
+  console.error('Firebase init failed:', e);
+}
+
+// Safe stub so the rest of the script can load even if Firebase is unavailable.
+// All calls become no-ops that resolve/reject gracefully — letting the built-in
+// admin login still work offline.
+function makeStubCollection(name) {
+  const err = new Error('Firestore unavailable (collection: ' + name + ')');
+  err.code = 'unavailable';
+  const stubQuery = {
+    get: () => Promise.reject(err),
+    onSnapshot: (next, onErr) => { if (onErr) onErr(err); return () => {}; },
+    where: () => stubQuery,
+    orderBy: () => stubQuery,
+    limit: () => stubQuery
+  };
+  return Object.assign({}, stubQuery, {
+    doc: () => ({
+      get: () => Promise.reject(err),
+      set: () => Promise.reject(err),
+      update: () => Promise.reject(err),
+      delete: () => Promise.reject(err),
+      onSnapshot: (next, onErr) => { if (onErr) onErr(err); return () => {}; }
+    }),
+    add: () => Promise.reject(err)
+  });
+}
+
+// Firestore collection references (with safe fallback)
+const customersCol  = db ? db.collection('customers')  : makeStubCollection('customers');
+const paymentsCol   = db ? db.collection('payments')   : makeStubCollection('payments');
+const auctionsCol   = db ? db.collection('auctions')   : makeStubCollection('auctions');
+const chitGroupsCol = db ? db.collection('chitgroups') : makeStubCollection('chitgroups');
+const usersCol      = db ? db.collection('users')      : makeStubCollection('users');
+
+if (!db) {
+  console.warn('Firestore unavailable — running in offline mode. Use admin / admin123 to sign in.');
+}
+
+// ── SESSION / AUTH ──
+let currentUser = null;
+let allUsers = [];
+
+// Built-in fallback admin (works even if Firestore is unreachable / rules block reads)
+const BUILTIN_ADMIN = {
+  username: 'admin',
+  password: 'admin123',
+  name: 'Admin',
+  role: 'admin',
+  created: new Date().toISOString().split('T')[0]
+};
+
+function loginAs(user) {
+  currentUser = user;
+  sessionStorage.setItem('chitUser', JSON.stringify(currentUser));
+  showApp();
+}
+
+function doLogin() {
+  const username = document.getElementById('login-username').value.trim().toLowerCase();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  if (!username || !password) { errEl.textContent = 'Please enter username and password'; return; }
+  errEl.textContent = 'Signing in…';
+
+  // 1) Built-in admin shortcut — always works
+  if (username === BUILTIN_ADMIN.username && password === BUILTIN_ADMIN.password) {
+    errEl.textContent = '';
+    loginAs(BUILTIN_ADMIN);
+    return;
+  }
+
+  // 2) Try cached users (loaded by onSnapshot) first — avoids extra query
+  if (allUsers && allUsers.length) {
+    const match = allUsers.find(u => (u.username || '').toLowerCase() === username && u.password === password);
+    if (match) { errEl.textContent = ''; loginAs(match); return; }
+  }
+
+  // 3) Live Firestore lookup
+  if (!db) { errEl.textContent = 'Database not initialized. Use admin / admin123.'; return; }
+  usersCol.where('username', '==', username).get().then(snap => {
+    if (snap.empty) { errEl.textContent = 'Invalid username or password'; return; }
+    const userData = snap.docs[0].data();
+    if (userData.password !== password) { errEl.textContent = 'Invalid username or password'; return; }
+    errEl.textContent = '';
+    loginAs(userData);
+  }).catch(err => {
+    console.error('Login error:', err);
+    errEl.textContent = 'Login failed: ' + (err.code || err.message || 'connection error') + '. Try admin / admin123.';
+  });
+}
+
+// Allow Enter key to submit login
+document.getElementById('login-password').addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+document.getElementById('login-username').addEventListener('keydown', function(e) { if (e.key === 'Enter') document.getElementById('login-password').focus(); });
+
+function doLogout() {
+  currentUser = null;
+  sessionStorage.removeItem('chitUser');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('header-admin-name').textContent = currentUser.name || currentUser.username;
+  const initials = (currentUser.name || currentUser.username).split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+  document.getElementById('header-avatar').textContent = initials;
+  document.getElementById('dropdown-name').textContent = currentUser.name || currentUser.username;
+  document.getElementById('dropdown-role').textContent = (currentUser.role || 'admin').charAt(0).toUpperCase() + (currentUser.role || 'admin').slice(1);
+}
+
+function toggleAvatarMenu() {
+  document.getElementById('avatar-dropdown').classList.toggle('open');
+}
+function closeAvatarMenu() {
+  document.getElementById('avatar-dropdown').classList.remove('open');
+}
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.avatar-wrap');
+  if (wrap && !wrap.contains(e.target)) closeAvatarMenu();
+});
+
+// Check session on load
+(function checkSession() {
+  const saved = sessionStorage.getItem('chitUser');
+  if (saved) {
+    try { currentUser = JSON.parse(saved); showApp(); } catch(e) { doLogout(); }
+  }
+})();
+
+// Seed default admin if no users exist
+function seedDefaultAdmin() {
+  usersCol.get().then(snap => {
+    if (snap.empty) {
+      usersCol.doc('admin').set({
+        username: 'admin',
+        password: 'admin123',
+        name: 'Admin',
+        role: 'admin',
+        created: new Date().toISOString().split('T')[0]
+      }).then(() => console.log('Default admin created: admin / admin123'));
+    }
+  });
+}
+seedDefaultAdmin();
+
+// ── ADMIN AUTH FOR DELETES ──
+let pendingAdminAction = null;
+
+function requireAdminAuth(callback) {
+  pendingAdminAction = callback;
+  document.getElementById('admin-confirm-user').value = '';
+  document.getElementById('admin-confirm-pass').value = '';
+  document.getElementById('admin-confirm-error').textContent = '';
+  openModal('modal-admin-confirm');
+}
+
+function verifyAdminAndProceed() {
+  const username = document.getElementById('admin-confirm-user').value.trim().toLowerCase();
+  const password = document.getElementById('admin-confirm-pass').value;
+  const errEl = document.getElementById('admin-confirm-error');
+  if (!username || !password) { errEl.textContent = 'Please enter credentials'; return; }
+  const adminUser = allUsers.find(u => u.username === username && u.role === 'admin');
+  if (!adminUser || adminUser.password !== password) {
+    errEl.textContent = 'Invalid admin credentials';
+    return;
+  }
+  closeModal('modal-admin-confirm');
+  if (pendingAdminAction) {
+    pendingAdminAction();
+    pendingAdminAction = null;
+  }
+}
+
+// ── USER MANAGEMENT ──
+function renderUsers() {
+  const tbody = document.getElementById('users-table');
+  if (!allUsers.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text3);">No users found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = allUsers.map(u => `<tr>
+    <td>${u.username}</td>
+    <td>${u.name}</td>
+    <td><span class="pill ${u.role === 'admin' ? 'pill-green' : 'pill-gold'}">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
+    <td>${u.created || '-'}</td>
+    <td>${u.username !== 'admin' ? '<button class="btn btn-sm" style="background:var(--danger);color:#fff;border:none;font-size:0.72rem;padding:3px 10px;" onclick="deleteUser(\'' + u.username + '\')">Delete</button>' : '<span style="color:var(--text3);font-size:0.78rem;">Default</span>'}</td>
+  </tr>`).join('');
+}
+
+usersCol.onSnapshot(snap => {
+  allUsers = snap.docs.map(d => d.data());
+  renderUsers();
+});
+
+function addUser() {
+  const name = document.getElementById('new-user-name').value.trim();
+  const username = document.getElementById('new-user-username').value.trim().toLowerCase();
+  const password = document.getElementById('new-user-password').value;
+  const role = document.getElementById('new-user-role').value;
+  if (!name || !username || !password) { toast('Please fill all required fields'); return; }
+  if (password.length < 4) { toast('Password must be at least 4 characters'); return; }
+  if (allUsers.find(u => u.username === username)) { toast('Username "' + username + '" already exists'); return; }
+  usersCol.doc(username).set({
+    username, password, name, role,
+    created: new Date().toISOString().split('T')[0]
+  }).then(() => {
+    toast('User "' + username + '" created!');
+    closeModal('modal-add-user');
+    document.getElementById('new-user-name').value = '';
+    document.getElementById('new-user-username').value = '';
+    document.getElementById('new-user-password').value = '';
+  }).catch(e => toast('Error: ' + e.message));
+}
+
+function deleteUser(username) {
+  requireAdminAuth(function() {
+    usersCol.doc(username).delete()
+      .then(() => toast('User deleted!'))
+      .catch(e => toast('Error: ' + e.message));
+  });
+}
+
+// ── CONSTANTS ──
+const GROUPS = [];
+const DENOM = {'1':100000,'2':200000,'3':300000};
+const MONTHS = 20;
+const MEMBERS = 20;
+const GROUP_START = {};
+// Per-group metadata for dynamically created groups
+const GROUP_META = {};
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function getMonthLabels(group) {
+  const [sy, sm] = GROUP_START[group] || [2025, 10];
+  return Array.from({length: MONTHS}, (_, i) => {
+    const d = new Date(sy, sm + i);
+    return MONTH_NAMES[d.getMonth()] + '-' + String(d.getFullYear()).slice(2);
+  });
+}
+
+const FIRST_NAMES = ['Ramesh','Suresh','Priya','Kavita','Arun','Deepa','Mohan','Sunita','Vijay','Anita','Kumar','Meena','Ravi','Pooja','Sanjay','Lakshmi','Arjun','Divya','Kiran','Nisha'];
+const LAST_NAMES = ['Kumar','Patel','Sharma','Reddy','Singh','Nair','Iyer','Rao','Gupta','Joshi'];
+const STATUS_OPTIONS = ['paid','paid','paid','paid','paid','paid','pending','overdue'];
+
+// ── LIVE DATA (populated by Firestore real-time listeners) ──
+let customers = [];
+const payments = {};
+const paidAmounts = {};
+let auctionData = [];
+
+// Initialize empty payment structure
+// (payments are initialized when groups are loaded from Firestore)
+
+// ── FIREBASE STATUS ──
+function setFbStatus(ok) {
+  const el = document.getElementById('fb-status');
+  if (ok) {
+    el.textContent = '🟢 Firestore Connected';
+    el.style.background = 'rgba(75,232,160,0.15)';
+    el.style.color = 'var(--accent3)';
+  } else {
+    el.textContent = '🔴 Offline';
+    el.style.background = 'rgba(232,75,106,0.15)';
+    el.style.color = 'var(--danger)';
+  }
+}
+
+// ── FIRESTORE REAL-TIME LISTENERS (onSnapshot) ──
+function initFirestoreListeners() {
+  // --- Customers ---
+  customersCol.onSnapshot(snap => {
+    customers = snap.docs.map(d => d.data());
+    customers.sort((a, b) => a.id.localeCompare(b.id));
+    renderCustomers();
+    const badge = document.querySelector('.nav-badge');
+    if (badge) badge.textContent = customers.length;
+    setFbStatus(true);
+  }, err => {
+    console.error('Firestore customers error:', err);
+    setFbStatus(false);
+  });
+
+  // --- Payments ---
+  paymentsCol.onSnapshot(snap => {
+    snap.docs.forEach(d => {
+      const g = d.id;
+      const data = d.data();
+      const meta = GROUP_META[g];
+      const grpMembers = meta ? meta.members : MEMBERS;
+      const grpDuration = meta ? meta.duration : MONTHS;
+      // Ensure payment arrays exist for this group
+      if (!payments[g]) {
+        payments[g] = [];
+        paidAmounts[g] = [];
+        for (let m = 0; m < grpMembers; m++) {
+          payments[g][m] = Array(grpDuration).fill('na');
+          paidAmounts[g][m] = Array(grpDuration).fill(0);
+        }
+      }
+      for (let m = 0; m < grpMembers; m++) {
+        if (data[String(m)]) {
+          for (let mo = 0; mo < grpDuration; mo++) {
+            payments[g][m][mo] = data[String(m)][mo] || 'na';
+          }
+        }
+        const amtKey = 'amt_' + m;
+        if (data[amtKey]) {
+          for (let mo = 0; mo < grpDuration; mo++) {
+            paidAmounts[g][m][mo] = data[amtKey][mo] || 0;
+          }
+        }
+      }
+    });
+    renderPaymentMonthView();
+  });
+
+  // --- Auctions ---
+  auctionsCol.onSnapshot(snap => {
+    auctionData = snap.docs.map(d => d.data());
+    renderAuctions();
+  });
+
+  // --- Chit Groups (dynamically created) ---
+  chitGroupsCol.onSnapshot(snap => {
+    // Sync GROUPS array with Firestore (remove groups no longer in Firestore)
+    const firestoreGroupNames = snap.docs.map(d => d.data().name);
+    // Remove groups that are no longer in Firestore
+    for (let i = GROUPS.length - 1; i >= 0; i--) {
+      if (!firestoreGroupNames.includes(GROUPS[i])) {
+        const removed = GROUPS[i];
+        GROUPS.splice(i, 1);
+        delete GROUP_START[removed];
+        delete GROUP_META[removed];
+      }
+    }
+    // Add/update groups from Firestore
+    snap.docs.forEach(d => {
+      const data = d.data();
+      const name = data.name;
+      const duration = data.duration || 20;
+      const members = data.members || 20;
+      if (!GROUPS.includes(name)) {
+        GROUPS.push(name);
+      }
+      GROUP_START[name] = [data.startYear, data.startMonth];
+      GROUP_META[name] = { value: data.value, duration, members, commission: data.commission || 5, installments: data.installments || [] };
+      // Initialize payment structure for this group
+      if (!payments[name]) {
+        payments[name] = [];
+        paidAmounts[name] = [];
+        for (let m = 0; m < members; m++) {
+          payments[name][m] = Array(duration).fill('na');
+          paidAmounts[name][m] = Array(duration).fill(0);
+        }
+      }
+    });
+    renderChitGroups();
+    renderDashboard();
+    initPaymentFilters();
+  });
+}
+
+// ── CREATE CHIT GROUP ──
+function generateInstallmentFields() {
+  const duration = parseInt(document.getElementById('chit-duration').value) || 20;
+  const grid = document.getElementById('chit-installments-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < duration; i++) {
+    grid.innerHTML += '<div style="display:flex;flex-direction:column;gap:3px;">'
+      + '<label style="font-size:0.72rem;color:var(--text2);">Month ' + (i + 1) + '</label>'
+      + '<input type="number" class="chit-inst-input" data-month="' + i + '" placeholder="₹0" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:0.82rem;">'
+      + '</div>';
+  }
+}
+
+function createChitGroup() {
+  const name = document.getElementById('chit-name').value.trim();
+  const value = parseInt(document.getElementById('chit-amount').value);
+  const duration = parseInt(document.getElementById('chit-duration').value) || 20;
+  const members = parseInt(document.getElementById('chit-members').value) || 20;
+  const commission = parseFloat(document.getElementById('chit-commission').value) || 5;
+  const startDateStr = document.getElementById('chit-start').value;
+
+  if (!name) { toast('Please enter a Group Name'); return; }
+  if (!startDateStr) { toast('Please select a Start Date'); return; }
+  if (GROUPS.includes(name)) { toast('Group "' + name + '" already exists'); return; }
+
+  // Collect per-month installments
+  const instInputs = document.querySelectorAll('.chit-inst-input');
+  const installments = [];
+  for (let i = 0; i < duration; i++) {
+    const inp = instInputs[i];
+    const val = inp ? parseFloat(inp.value) : 0;
+    if (!val || val <= 0) { toast('Please enter installment for Month ' + (i + 1)); inp && inp.focus(); return; }
+    installments.push(val);
+  }
+
+  if (!name) { toast('Please enter a Group Name'); return; }
+  if (!startDateStr) { toast('Please select a Start Date'); return; }
+  if (GROUPS.includes(name)) { toast('Group "' + name + '" already exists'); return; }
+
+  const startDate = new Date(startDateStr);
+  const startYear = startDate.getFullYear();
+  const startMonth = startDate.getMonth();
+
+  // Add to local data
+  GROUPS.push(name);
+  GROUP_START[name] = [startYear, startMonth];
+  GROUP_META[name] = { value, duration, members, commission, installments };
+
+  // Initialize payment arrays
+  payments[name] = [];
+  paidAmounts[name] = [];
+  for (let m = 0; m < members; m++) {
+    payments[name][m] = Array(duration).fill('na');
+    paidAmounts[name][m] = Array(duration).fill(0);
+  }
+
+  // Save to Firestore
+  chitGroupsCol.doc(name).set({
+    name, value, duration, members, commission, installments,
+    startYear, startMonth
+  }).then(() => {
+    toast('Chit group "' + name + '" created!');
+  }).catch(err => {
+    console.error('Error saving chit group:', err);
+    toast('Group created locally (Firestore save failed)');
+  });
+
+  // Re-render and close modal
+  renderChitGroups();
+  renderDashboard();
+  closeModal('modal-add-chit');
+
+  // Reset form
+  document.getElementById('chit-name').value = '';
+  document.getElementById('chit-start').value = '';
+  generateInstallmentFields();
+}
+
+// ── EDIT CHIT GROUP ──
+function generateEditInstallmentFields() {
+  const duration = parseInt(document.getElementById('edit-chit-duration').value) || 20;
+  const grid = document.getElementById('edit-chit-installments-grid');
+  // Preserve existing values
+  const existing = Array.from(grid.querySelectorAll('.edit-inst-input')).map(el => el.value);
+  grid.innerHTML = '';
+  for (let i = 0; i < duration; i++) {
+    grid.innerHTML += '<div style="display:flex;flex-direction:column;gap:3px;">'
+      + '<label style="font-size:0.72rem;color:var(--text2);">Month ' + (i + 1) + '</label>'
+      + '<input type="number" class="edit-inst-input" data-month="' + i + '" value="' + (existing[i] || '') + '" placeholder="\u20b90" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:0.82rem;">'
+      + '</div>';
+  }
+}
+
+function openEditChitGroup(name) {
+  const meta = GROUP_META[name];
+  const [sy, sm] = GROUP_START[name] || [2025, 0];
+  document.getElementById('edit-chit-orig-name').value = name;
+  document.getElementById('edit-chit-name').value = name;
+  document.getElementById('edit-chit-amount').value = meta ? meta.value : 100000;
+  document.getElementById('edit-chit-duration').value = meta ? meta.duration : 20;
+  document.getElementById('edit-chit-members').value = meta ? meta.members : 20;
+  document.getElementById('edit-chit-commission').value = meta ? meta.commission : 5;
+  const startDate = new Date(sy, sm, 2);
+  document.getElementById('edit-chit-start').value = startDate.toISOString().split('T')[0];
+  // Populate installment fields
+  const duration = meta ? meta.duration : 20;
+  const installments = meta ? (meta.installments || []) : [];
+  const grid = document.getElementById('edit-chit-installments-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < duration; i++) {
+    grid.innerHTML += '<div style="display:flex;flex-direction:column;gap:3px;">'
+      + '<label style="font-size:0.72rem;color:var(--text2);">Month ' + (i + 1) + '</label>'
+      + '<input type="number" class="edit-inst-input" data-month="' + i + '" value="' + (installments[i] || '') + '" placeholder="\u20b90" style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:0.82rem;">'
+      + '</div>';
+  }
+  openModal('modal-edit-chit');
+}
+
+function saveChitGroup() {
+  const origName = document.getElementById('edit-chit-orig-name').value;
+  const name = document.getElementById('edit-chit-name').value.trim();
+  const value = parseInt(document.getElementById('edit-chit-amount').value);
+  const duration = parseInt(document.getElementById('edit-chit-duration').value) || 20;
+  const members = parseInt(document.getElementById('edit-chit-members').value) || 20;
+  const commission = parseFloat(document.getElementById('edit-chit-commission').value) || 5;
+  const startDateStr = document.getElementById('edit-chit-start').value;
+
+  if (!name) { toast('Please enter a Group Name'); return; }
+  if (!startDateStr) { toast('Please select a Start Date'); return; }
+  if (name !== origName && GROUPS.includes(name)) { toast('Group "' + name + '" already exists'); return; }
+
+  const instInputs = document.querySelectorAll('.edit-inst-input');
+  const installments = [];
+  for (let i = 0; i < duration; i++) {
+    const inp = instInputs[i];
+    const val = inp ? parseFloat(inp.value) : 0;
+    if (!val || val <= 0) { toast('Please enter installment for Month ' + (i + 1)); inp && inp.focus(); return; }
+    installments.push(val);
+  }
+
+  const startDate = new Date(startDateStr);
+  const startYear = startDate.getFullYear();
+  const startMonth = startDate.getMonth();
+
+  // If name changed, remove old entry
+  if (name !== origName) {
+    const idx = GROUPS.indexOf(origName);
+    if (idx > -1) GROUPS[idx] = name;
+    delete GROUP_START[origName];
+    delete GROUP_META[origName];
+    chitGroupsCol.doc(origName).delete().catch(() => {});
+  }
+
+  GROUP_START[name] = [startYear, startMonth];
+  GROUP_META[name] = { value, duration, members, commission, installments };
+
+  chitGroupsCol.doc(name).set({
+    name, value, duration, members, commission, installments,
+    startYear, startMonth
+  }).then(() => {
+    toast('Chit group "' + name + '" saved!');
+  }).catch(err => {
+    console.error('Error saving chit group:', err);
+    toast('Saved locally (Firestore save failed)');
+  });
+
+  renderChitGroups();
+  renderDashboard();
+  closeModal('modal-edit-chit');
+}
+
+function deleteChitGroupFromEdit() {
+  const name = document.getElementById('edit-chit-orig-name').value;
+  requireAdminAuth(function() {
+    closeModal('modal-edit-chit');
+    deleteChitGroupConfirmed(name);
+  });
+}
+
+// ── DELETE CHIT GROUP ──
+function deleteChitGroup(name) {
+  requireAdminAuth(function() {
+    deleteChitGroupConfirmed(name);
+  });
+}
+
+function deleteChitGroupConfirmed(name) {
+  // Remove from local data
+  const idx = GROUPS.indexOf(name);
+  if (idx > -1) GROUPS.splice(idx, 1);
+  delete GROUP_START[name];
+  delete GROUP_META[name];
+  delete payments[name];
+  delete paidAmounts[name];
+
+  // Delete from Firestore
+  chitGroupsCol.doc(name).delete()
+    .then(() => toast('Chit group "' + name + '" deleted!'))
+    .catch(err => {
+      console.error('Error deleting chit group:', err);
+      toast('Deleted locally (Firestore delete failed)');
+    });
+
+  renderChitGroups();
+  renderDashboard();
+}
+
+// ── FIRESTORE CRUD HELPERS ──
+function fbSetCustomer(customer) {
+  return db.collection('customers').doc(customer.id).set(customer);
+}
+function fbDeleteCustomer(id) {
+  return db.collection('customers').doc(id).delete();
+}
+function fbSetPayment(group, memberIdx, month, status) {
+  const memberKey = String(memberIdx);
+  const amtKey = 'amt_' + memberIdx;
+  const row = [...payments[group][memberIdx]];
+  row[month] = status;
+  const amtRow = [...paidAmounts[group][memberIdx]];
+  return db.collection('payments').doc(group).set({ [memberKey]: row, [amtKey]: amtRow }, { merge: true });
+}
+function fbSetPaymentBulk(group, updatedRows) {
+  const data = {};
+  for (const [mi, row] of Object.entries(updatedRows)) {
+    data[String(mi)] = row;
+    data['amt_' + mi] = [...paidAmounts[group][mi]];
+  }
+  return db.collection('payments').doc(group).set(data, { merge: true });
+}
+
+// ── SEED SAMPLE DATA (first-time setup) ──
+async function seedFirebaseData() {
+  if (!confirm('This will upload sample customers & payments to Firestore. Continue?')) return;
+  const statusEl = document.getElementById('fb-seed-status');
+  statusEl.textContent = 'Seeding data…';
+
+  try {
+    let batch = db.batch();
+    let count = 0;
+    let cid = 1;
+    const paymentData = {};
+
+    for (const g of GROUPS) {
+      paymentData[g] = {};
+      for (let m = 1; m <= MEMBERS; m++) {
+        const fn = FIRST_NAMES[(cid * 7) % FIRST_NAMES.length];
+        const ln = LAST_NAMES[(cid * 3) % LAST_NAMES.length];
+        const id = 'US' + String(cid).padStart(4, '0');
+        batch.set(db.collection('customers').doc(id), {
+          id, name: fn + ' ' + ln,
+          phone: '+1 (555) ' + String(100 + cid * 7).slice(0,3) + '-' + String(1000 + cid * 13).slice(0,4),
+          email: fn.toLowerCase() + '.' + ln.toLowerCase() + '@email.com',
+          group: g, memberNum: m, joinDate: '2024-04-01',
+          kyc: cid % 5 === 0 ? 'Pending' : 'Verified',
+          status: cid % 17 === 0 ? 'Defaulter' : 'Active',
+        });
+        paymentData[g][String(m - 1)] = Array.from({length: MONTHS}, (_, mo) =>
+          mo < 4 ? STATUS_OPTIONS[Math.floor(Math.random() * STATUS_OPTIONS.length)] : 'na'
+        );
+        count++;
+        if (count >= 450) {
+          await batch.commit();
+          batch = db.batch();
+          count = 0;
+        }
+        cid++;
+      }
+    }
+
+    for (const g of GROUPS) {
+      batch.set(db.collection('payments').doc(g), paymentData[g]);
+      count++;
+    }
+
+    const auctions = [
+      {group:'1LA', month:1, date:'2024-04-15', winner:'Ramesh Kumar', bid:85000, value:100000, comm:5000, div:500, status:'Completed'},
+      {group:'1LA', month:2, date:'2024-05-15', winner:'Priya Sharma', bid:87000, value:100000, comm:5000, div:650, status:'Completed'},
+      {group:'1LB', month:1, date:'2024-04-20', winner:'Arun Nair', bid:82000, value:100000, comm:5000, div:450, status:'Completed'},
+      {group:'2LA', month:1, date:'2024-04-15', winner:'Vijay Patel', bid:172000, value:200000, comm:10000, div:900, status:'Completed'},
+      {group:'1LA', month:3, date:'2024-06-15', winner:'Kumar Rao', bid:88000, value:100000, comm:5000, div:600, status:'Completed'},
+      {group:'3LA', month:1, date:'2024-04-15', winner:'Meena Gupta', bid:255000, value:300000, comm:15000, div:1500, status:'Completed'},
+      {group:'1LC', month:1, date:'2024-04-25', winner:'Sanjay Singh', bid:84000, value:100000, comm:5000, div:550, status:'Pending'},
+    ];
+    auctions.forEach((a, i) => { batch.set(db.collection('auctions').doc('auc' + i), a); });
+
+    await batch.commit();
+    statusEl.textContent = '✅ Sample data seeded to Firestore!';
+    toast('Sample data uploaded to Firestore!');
+  } catch (e) {
+    statusEl.textContent = '❌ Error: ' + e.message;
+    console.error(e);
+  }
+}
+
+async function clearFirebaseData() {
+  try {
+    const cols = ['customers', 'payments', 'auctions'];
+    for (const colName of cols) {
+      const snap = await db.collection(colName).get();
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    toast('All Firestore data cleared.');
+  } catch (e) {
+    toast('Error: ' + e.message);
+  }
+}
+
+// ── TAB SWITCHING ──
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── MODAL ──
+function openModal(id) { document.getElementById(id).classList.add('open'); if (id === 'modal-add-chit') generateInstallmentFields(); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// ── TOAST ──
+function toast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── FORMAT ──
+function fmt(n) { return '₹' + n.toLocaleString('en-IN'); }
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  // Groups table
+  const groups = [
+    {name:'1LA', val:100000, month:4, status:'Active'},
+    {name:'1LB', val:100000, month:3, status:'Active'},
+    {name:'1LC', val:100000, month:2, status:'Active'},
+    {name:'1LD', val:100000, month:4, status:'Active'},
+    {name:'2LA', val:200000, month:4, status:'Active'},
+    {name:'2LB', val:200000, month:3, status:'Active'},
+    {name:'3LA', val:300000, month:4, status:'Active'},
+    {name:'3LB', val:300000, month:2, status:'Active'},
+  ];
+  const tbody = document.getElementById('dashboard-groups');
+  tbody.innerHTML = groups.map(g => `
+    <tr>
+      <td><span class="pill pill-blue">${g.name}</span></td>
+      <td>${fmt(g.val)}</td>
+      <td>20</td>
+      <td>${g.month}/20</td>
+      <td>
+        <div class="progress-wrap">
+          <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${g.month/20*100}%"></div></div>
+          <div class="progress-pct">${Math.round(g.month/20*100)}%</div>
+        </div>
+      </td>
+      <td><span class="pill pill-green">Active</span></td>
+    </tr>
+  `).join('');
+
+  // Bar chart
+  const months = ['Apr','May','Jun','Jul','Aug'];
+  const vals = [180000, 240000, 210000, 260000, 240000];
+  const max = Math.max(...vals);
+  const bc = document.getElementById('bar-chart');
+  const bl = document.getElementById('bar-labels');
+  bc.innerHTML = vals.map((v,i) => `
+    <div class="bar-col">
+      <div class="bar" style="height:${Math.round(v/max*80)}px" data-tip="${fmt(v)}"></div>
+    </div>
+  `).join('');
+  bl.innerHTML = months.map(m => `<span style="font-size:0.68rem;color:var(--text3);flex:1;text-align:center;">${m}</span>`).join('');
+
+  // Activity
+  const acts = [
+    {icon:'💰', bg:'rgba(75,232,160,0.1)', title:'Payment received from Ramesh Kumar · 1LA', meta:'Today, 10:23 AM'},
+    {icon:'🔨', bg:'rgba(232,184,75,0.1)', title:'Auction completed for Group 1LA – Month 4', meta:'Today, 9:00 AM'},
+    {icon:'👤', bg:'rgba(75,125,232,0.1)', title:'New member Priya Reddy added to Group 2LB', meta:'Yesterday, 3:45 PM'},
+    {icon:'⚠️', bg:'rgba(232,75,106,0.1)', title:'Overdue alert: Suresh Patel – 1LB Month 3', meta:'Yesterday, 11:00 AM'},
+    {icon:'✅', bg:'rgba(75,232,160,0.1)', title:'KYC verified for Anita Singh', meta:'2 days ago'},
+  ];
+  document.getElementById('activity-feed').innerHTML = acts.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.bg}">${a.icon}</div>
+      <div class="activity-content">
+        <div class="activity-title">${a.title}</div>
+        <div class="activity-meta">${a.meta}</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Collection rates
+  const rates = [
+    {name:'1LA', rate:92},{name:'1LB', rate:85},{name:'2LA', rate:88},{name:'3LA', rate:75}
+  ];
+  document.getElementById('collection-rates').innerHTML = rates.map(r => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="font-size:0.78rem;color:var(--text2);width:30px;">${r.name}</span>
+      <div class="progress-bar-bg" style="flex:1;height:8px;"><div class="progress-bar-fill" style="width:${r.rate}%"></div></div>
+      <span style="font-size:0.75rem;color:var(--text2);width:32px;">${r.rate}%</span>
+    </div>
+  `).join('');
+}
+
+// ── CUSTOMERS ──
+function fmtDate(d) {
+  if (!d) return '-';
+  const dt = new Date(d + 'T00:00:00');
+  if (isNaN(dt)) return d;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return dt.getDate() + ' ' + months[dt.getMonth()] + ' ' + String(dt.getFullYear()).slice(-2);
+}
+
+function renderCustomers(list) {
+  const t = document.getElementById('customer-table');
+  t.innerHTML = (list || customers).map(c => `
+    <tr>
+      <td>${c.name || ''}</td>
+      <td style="font-size:0.78rem;">${c.aadhaar || '-'}</td>
+      <td style="font-size:0.78rem;">${c.pan || '-'}</td>
+      <td>${c.phone || ''}</td>
+      <td style="font-size:0.8rem;">${c.email || ''}</td>
+      <td style="white-space:nowrap;">${fmtDate(c.dob)}</td>
+      <td style="font-size:0.78rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${(c.address||'')}, ${(c.city||'')}, ${(c.state||'')} ${(c.pin||'')}">${c.city || c.address || '-'}</td>
+      <td><span class="pill pill-blue">${c.group || ''}</span></td>
+      <td>${fmtDate(c.joinDate)}</td>
+      <td style="font-size:0.78rem;">${c.bank || '-'}</td>
+      <td style="font-size:0.78rem;">${c.account || '-'}</td>
+      <td style="font-size:0.78rem;">${c.ifsc || '-'}</td>
+      <td style="font-size:0.78rem;">${c.nominee || '-'}</td>
+      <td><span class="pill ${c.kyc==='Verified'?'pill-green':'pill-gold'}">${c.kyc || 'Pending'}</span></td>
+      <td style="font-size:0.78rem;">${c.cibil || '-'}</td>
+      <td style="font-size:0.78rem;">${c.agent || '-'}</td>
+      <td><span class="pill ${c.status==='Active'?'pill-green':c.status==='Defaulter'?'pill-red':'pill-gray'}">${c.status || ''}</span></td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button class="btn btn-secondary btn-sm" onclick="viewCustomer('${c.id}')">View</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterCustomers(q) {
+  const filtered = customers.filter(c =>
+    c.name.toLowerCase().includes(q.toLowerCase()) ||
+    c.phone.includes(q) ||
+    c.id.toLowerCase().includes(q.toLowerCase())
+  );
+  renderCustomers(filtered);
+}
+function filterCustomersByGroup(g) {
+  renderCustomers(g ? customers.filter(c => c.group === g) : customers);
+}
+
+let viewingCustomerId = null;
+
+function viewCustomer(id) {
+  const c = customers.find(x => x.id === id);
+  if (!c) return;
+  viewingCustomerId = id;
+  document.getElementById('vc-name').textContent = c.name;
+  document.getElementById('vc-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label>Customer ID</label><input id="vc-id" value="${c.id}" readonly style="opacity:0.6;"></div>
+      <div class="form-group"><label>Full Name</label><input id="vc-fname" value="${c.name || ''}"></div>
+      <div class="form-group"><label>Aadhaar Number</label><input id="vc-aadhaar" value="${c.aadhaar || ''}"></div>
+      <div class="form-group"><label>PAN Number</label><input id="vc-pan" value="${c.pan || ''}" style="text-transform:uppercase"></div>
+      <div class="form-group"><label>Phone</label><input id="vc-phone" value="${c.phone || ''}"></div>
+      <div class="form-group"><label>Email</label><input id="vc-email" value="${c.email || ''}"></div>
+      <div class="form-group"><label>Date of Birth</label><input id="vc-dob" type="date" value="${c.dob || ''}"></div>
+      <div class="form-group"><label>Address</label><input id="vc-address" value="${c.address || ''}"></div>
+      <div class="form-group"><label>City</label><input id="vc-city" value="${c.city || ''}"></div>
+      <div class="form-group"><label>State</label><input id="vc-state" value="${c.state || ''}"></div>
+      <div class="form-group"><label>PIN Code</label><input id="vc-pin" value="${c.pin || ''}"></div>
+      <div class="form-group"><label>Chit Group</label><input id="vc-group" value="${c.group || ''}" readonly style="opacity:0.6;"></div>
+      <div class="form-group"><label>Member #</label><input id="vc-memnum" value="${c.memberNum || ''}" readonly style="opacity:0.6;"></div>
+      <div class="form-group"><label>Bank Name</label><input id="vc-bank" value="${c.bank || ''}"></div>
+      <div class="form-group"><label>Account Number</label><input id="vc-account" value="${c.account || ''}"></div>
+      <div class="form-group"><label>IFSC Number</label><input id="vc-ifsc" value="${c.ifsc || ''}"></div>
+      <div class="form-group"><label>Nominee Name</label><input id="vc-nominee" value="${c.nominee || ''}"></div>
+      <div class="form-group"><label>Nominee Relation</label><select id="vc-nomineerel">
+        <option ${c.nomineeRel==='Spouse'?'selected':''}>Spouse</option>
+        <option ${c.nomineeRel==='Parent'?'selected':''}>Parent</option>
+        <option ${c.nomineeRel==='Child'?'selected':''}>Child</option>
+        <option ${c.nomineeRel==='Sibling'?'selected':''}>Sibling</option>
+        <option ${c.nomineeRel==='Other'?'selected':''}>Other</option>
+      </select></div>
+      <div class="form-group"><label>Join Date</label><input id="vc-joindate" type="date" value="${c.joinDate || ''}"></div>
+      <div class="form-group"><label>KYC Status</label><select id="vc-kyc">
+        <option ${c.kyc==='Verified'?'selected':''}>Verified</option>
+        <option ${c.kyc==='Pending'?'selected':''}>Pending</option>
+        <option ${c.kyc==='Rejected'?'selected':''}>Rejected</option>
+      </select></div>
+      <div class="form-group"><label>CIBIL Risk Level</label><select id="vc-cibil">
+        <option value="" ${!c.cibil?'selected':''}>Select</option>
+        <option ${c.cibil==='Low'?'selected':''}>Low</option>
+        <option ${c.cibil==='Medium'?'selected':''}>Medium</option>
+        <option ${c.cibil==='High'?'selected':''}>High</option>
+      </select></div>
+      <div class="form-group"><label>Agent</label><input id="vc-agent" value="${c.agent || ''}"></div>
+      <div class="form-group"><label>Agent Commission</label><input id="vc-agentcomm" value="${c.agentComm || ''}"></div>
+      <div class="form-group"><label>Status</label><select id="vc-status">
+        <option ${c.status==='Active'?'selected':''}>Active</option>
+        <option ${c.status==='Defaulter'?'selected':''}>Defaulter</option>
+        <option ${c.status==='Completed'?'selected':''}>Completed</option>
+      </select></div>
+    </div>
+  `;
+  openModal('modal-view-customer');
+}
+
+function saveCustomerFromModal() {
+  if (!viewingCustomerId) return;
+  const c = customers.find(x => x.id === viewingCustomerId);
+  if (!c) return;
+  const updated = {
+    ...c,
+    name: document.getElementById('vc-fname').value,
+    aadhaar: document.getElementById('vc-aadhaar').value,
+    pan: document.getElementById('vc-pan').value,
+    phone: document.getElementById('vc-phone').value,
+    email: document.getElementById('vc-email').value,
+    dob: document.getElementById('vc-dob').value,
+    address: document.getElementById('vc-address').value,
+    city: document.getElementById('vc-city').value,
+    state: document.getElementById('vc-state').value,
+    pin: document.getElementById('vc-pin').value,
+    bank: document.getElementById('vc-bank').value,
+    account: document.getElementById('vc-account').value,
+    ifsc: document.getElementById('vc-ifsc').value,
+    nominee: document.getElementById('vc-nominee').value,
+    nomineeRel: document.getElementById('vc-nomineerel').value,
+    joinDate: document.getElementById('vc-joindate').value,
+    kyc: document.getElementById('vc-kyc').value,
+    cibil: document.getElementById('vc-cibil').value,
+    agent: document.getElementById('vc-agent').value,
+    agentComm: document.getElementById('vc-agentcomm').value,
+    status: document.getElementById('vc-status').value,
+  };
+  fbSetCustomer(updated)
+    .then(() => { closeModal('modal-view-customer'); toast('Customer updated in Firebase!'); })
+    .catch(e => toast('Error: ' + e.message));
+}
+
+function deleteCustomerFromModal() {
+  if (!viewingCustomerId) return;
+  requireAdminAuth(function() {
+    fbDeleteCustomer(viewingCustomerId)
+      .then(() => { closeModal('modal-view-customer'); toast('Customer deleted from Firebase!'); })
+      .catch(e => toast('Error: ' + e.message));
+  });
+}
+
+function addCustomerFromModal() {
+  // Gather all form fields from the add-customer modal
+  const modal = document.getElementById('modal-add-customer');
+  const inputs = modal.querySelectorAll('input, select, textarea');
+  const vals = Array.from(inputs).map(el => el.value.trim());
+  const [name, aadhaar, pan, phone, email, dob, address, city, state, pin, group, memberNum, bank, account, ifsc, nominee, nomineeRel, joinDate, kyc, cibil, agent, agentComm] = vals;
+  if (!name || !phone || group === 'Select group') {
+    toast('Please fill required fields (Name, Phone, Group)'); return;
+  }
+  // Generate next ID
+  const maxId = customers.reduce((max, c) => {
+    const num = parseInt(c.id.replace('US', ''));
+    return num > max ? num : max;
+  }, 0);
+  const newId = 'US' + String(maxId + 1).padStart(4, '0');
+  const customer = {
+    id: newId, name, aadhaar, pan, phone, email, dob, address, city, state, pin,
+    group, memberNum: parseInt(memberNum) || 1, bank, account, ifsc,
+    nominee, nomineeRel, joinDate: joinDate || new Date().toISOString().split('T')[0],
+    kyc: kyc || 'Pending', cibil, agent, agentComm,
+    status: 'Active',
+  };
+  fbSetCustomer(customer)
+    .then(() => {
+      closeModal('modal-add-customer');
+      // Reset form
+      modal.querySelectorAll('input:not([readonly])').forEach(el => el.value = '');
+      modal.querySelectorAll('select').forEach(el => el.selectedIndex = 0);
+      toast('Customer added to Firebase!');
+    })
+    .catch(e => toast('Error: ' + e.message));
+}
+
+function exportCSV() { toast('Exporting to CSV…'); }
+
+// ── CHIT GROUPS ──
+function renderChitGroups() {
+  const container = document.getElementById('chit-group-cards');
+  const now = new Date();
+  container.innerHTML = GROUPS.map(g => {
+    const meta = GROUP_META[g];
+    const val = meta ? meta.value : DENOM[parseInt(g[0])];
+    const members = meta ? meta.members : MEMBERS;
+    const duration = meta ? meta.duration : MONTHS;
+    const commission = meta ? meta.commission : 5;
+    const installments = meta ? (meta.installments || []) : [];
+    const [sy, sm] = GROUP_START[g] || [2025, 10];
+    const startDate = new Date(sy, sm);
+    const diffMonths = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth()) + 1;
+    const curMonth = Math.max(0, Math.min(duration, diffMonths));
+    const curMonthInst = installments.length > 0 && curMonth > 0 ? installments[Math.min(curMonth - 1, installments.length - 1)] : (val / members);
+    const pct = Math.round(curMonth / duration * 100);
+    const statusLabel = curMonth <= 0 ? 'Upcoming' : curMonth >= duration ? 'Completed' : 'Active';
+    const statusPill = curMonth <= 0 ? 'pill-gold' : curMonth >= duration ? 'pill-gray' : 'pill-green';
+    return `
+    <div class="group-card">
+      <div class="group-card-header">
+        <div class="group-name">${g}</div>
+        <span class="pill ${statusPill}">${statusLabel}</span>
+      </div>
+      <div class="group-meta">
+        <div class="group-meta-item">
+          <div class="gmi-label">Value</div>
+          <div class="gmi-value">${fmt(val)}</div>
+        </div>
+        <div class="group-meta-item" style="cursor:pointer;" title="Click to view all monthly installments" onclick="showInstallmentsModal('${g}')">
+          <div class="gmi-label">Installment</div>
+          <div class="gmi-value">${fmt(curMonthInst)}</div>
+        </div>
+        <div class="group-meta-item">
+          <div class="gmi-label">Members</div>
+          <div class="gmi-value">${members}</div>
+        </div>
+        <div class="group-meta-item">
+          <div class="gmi-label">Duration</div>
+          <div class="gmi-value">${duration} mo</div>
+        </div>
+        <div class="group-meta-item">
+          <div class="gmi-label">Current Month</div>
+          <div class="gmi-value">${curMonth} / ${duration}</div>
+        </div>
+        <div class="group-meta-item">
+          <div class="gmi-label">Commission</div>
+          <div class="gmi-value">${commission}%</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="progress-wrap">
+          <div class="progress-bar-bg" style="height:8px;"><div class="progress-bar-fill" style="width:${pct}%;height:100%;"></div></div>
+          <div class="progress-pct">${pct}%</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:6px;">
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="switchTab('payments',document.querySelector('[onclick*=payments]'));selectGroupInPayments('${g}');">Payments</button>
+        <button class="btn btn-secondary btn-sm" style="flex:1;" onclick="openChitDetail('${g}')">Details</button>
+        <button class="btn btn-sm" style="flex:0 0 auto;background:var(--accent);color:var(--on-accent);border:none;" onclick="openEditChitGroup('${g}')">Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── PAYMENT INFO (month-based view) ──
+let editTarget = null;
+
+// Build all possible month labels across all groups
+function getAllMonthOptions() {
+  const monthSet = new Map(); // key: 'YYYY-MM', value: 'Mon-YY'
+  GROUPS.forEach(g => {
+    const [sy, sm] = GROUP_START[g] || [2025, 10];
+    const duration = (GROUP_META[g] && GROUP_META[g].duration) || MONTHS;
+    for (let i = 0; i < duration; i++) {
+      const d = new Date(sy, sm + i);
+      const key = d.getFullYear() + '-' + String(d.getMonth()).padStart(2, '0');
+      const label = MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+      if (!monthSet.has(key)) monthSet.set(key, label);
+    }
+  });
+  // Sort by key (chronological)
+  return [...monthSet.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+// Get which groups have a given calendar month in their schedule, and which month index it is
+function getGroupsForMonth(yearMonthKey) {
+  const [yr, mo] = yearMonthKey.split('-').map(Number);
+  const results = []; // { group, monthIdx }
+  GROUPS.forEach(g => {
+    const [sy, sm] = GROUP_START[g] || [2025, 10];
+    const duration = (GROUP_META[g] && GROUP_META[g].duration) || MONTHS;
+    for (let i = 0; i < duration; i++) {
+      const d = new Date(sy, sm + i);
+      if (d.getFullYear() === yr && d.getMonth() === mo) {
+        results.push({ group: g, monthIdx: i });
+        break;
+      }
+    }
+  });
+  return results;
+}
+
+function initPaymentFilters() {
+  const monthSel = document.getElementById('pay-month-sel');
+  const allMonths = getAllMonthOptions();
+  // Default to current month
+  const now = new Date();
+  const curKey = now.getFullYear() + '-' + String(now.getMonth()).padStart(2, '0');
+  monthSel.innerHTML = allMonths.map(([key, label]) =>
+    `<option value="${key}" ${key === curKey ? 'selected' : ''}>${label}</option>`
+  ).join('');
+  onPayMonthChange();
+}
+
+function onPayMonthChange() {
+  const monthKey = document.getElementById('pay-month-sel').value;
+  const groupSel = document.getElementById('pay-group-sel');
+  const matches = getGroupsForMonth(monthKey);
+  groupSel.innerHTML = matches.length
+    ? matches.map(m => `<option value="${m.group}">${m.group}</option>`).join('')
+    : '<option value="">No groups this month</option>';
+  renderPaymentMonthView();
+}
+
+function renderPaymentMonthView() {
+  const monthKey = document.getElementById('pay-month-sel').value;
+  const grp = document.getElementById('pay-group-sel').value;
+  if (!grp) {
+    document.getElementById('pay-stats').innerHTML = '';
+    document.getElementById('pay-month-table').innerHTML = '<tr><td colspan="13" style="text-align:center;padding:20px;color:var(--text3);">No chit groups active for this month</td></tr>';
+    document.getElementById('pay-grid-title').textContent = 'Payment Details';
+    return;
+  }
+
+  const matches = getGroupsForMonth(monthKey);
+  const match = matches.find(m => m.group === grp);
+  if (!match) return;
+  const moIdx = match.monthIdx;
+  const monthLabel = document.getElementById('pay-month-sel').selectedOptions[0].text;
+
+  const groupCustomers = customers.filter(c => c.group === grp);
+  const meta = GROUP_META[grp];
+  const grpValue = meta ? meta.value : (DENOM[parseInt(grp[0])] || 100000);
+  const grpMembers = meta ? meta.members : MEMBERS;
+  const grpDuration = meta ? meta.duration : MONTHS;
+  const grpInstallments = meta ? (meta.installments || []) : [];
+  const installment = grpInstallments.length > moIdx ? grpInstallments[moIdx] : (grpValue / grpMembers);
+  const grpCommission = meta ? meta.commission : 5;
+
+  document.getElementById('pay-grid-title').textContent = `${grp} \u2013 ${monthLabel} (Month ${moIdx + 1} of ${grpDuration})`;
+  let paid = 0, pending = 0, overdue = 0;
+  groupCustomers.forEach((c, mi) => {
+    const st = payments[grp] && payments[grp][mi] ? payments[grp][mi][moIdx] : 'na';
+    if (st === 'paid') paid++;
+    else if (st === 'pending') pending++;
+    else if (st === 'overdue') overdue++;
+  });
+  const total = paid + pending + overdue;
+  document.getElementById('pay-stats').innerHTML = `
+    <div class="stat-card green"><div class="stat-label">Paid</div><div class="stat-value">${paid}</div></div>
+    <div class="stat-card gold"><div class="stat-label">Partial Paid</div><div class="stat-value">${pending}</div></div>
+    <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value">${overdue}</div></div>
+    <div class="stat-card blue"><div class="stat-label">Collection Rate</div><div class="stat-value">${total > 0 ? Math.round(paid / total * 100) : 0}<span>%</span></div></div>
+  `;
+
+  // Table rows
+  const tbody = document.getElementById('pay-month-table');
+  tbody.innerHTML = groupCustomers.map((c, mi) => {
+    let st = payments[grp] && payments[grp][mi] ? payments[grp][mi][moIdx] : 'na';
+    const due = installment;
+    const storedAmt = paidAmounts[grp] && paidAmounts[grp][mi] ? paidAmounts[grp][mi][moIdx] : 0;
+    const paidAmt = storedAmt || (st === 'paid' ? installment : 0);
+    const profit = paidAmt > 0 ? Math.round(paidAmt * (grpCommission / 100)) : 0;
+    // Carryover from previous months: sum of (prev month due - prev month paid) for this member
+    let carryOver = 0;
+    for (let k = 0; k < moIdx; k++) {
+      const prevDue = grpInstallments.length > k ? grpInstallments[k] : (grpValue / grpMembers);
+      const prevStored = paidAmounts[grp] && paidAmounts[grp][mi] ? paidAmounts[grp][mi][k] : 0;
+      const prevStatus = payments[grp] && payments[grp][mi] ? payments[grp][mi][k] : 'na';
+      const prevPaid = prevStored || (prevStatus === 'paid' ? prevDue : 0);
+      carryOver += Math.max(0, prevDue - prevPaid);
+    }
+    const overallDue = due + carryOver;
+    const pendingAmt = Math.max(0, overallDue - paidAmt);
+    // Status reflects overall due vs paid
+    if (st !== 'na') {
+      st = paidAmt >= overallDue ? 'paid' : paidAmt > 0 ? 'pending' : 'overdue';
+    }
+    const pillClass = st === 'paid' ? 'pill-green' : st === 'pending' ? 'pill-gold' : st === 'overdue' ? 'pill-red' : '';
+    const stLabel = st === 'paid' ? 'Paid' : st === 'pending' ? 'Partial Paid' : st === 'overdue' ? 'Overdue' : '';
+    return `<tr>
+      <td>${c.name || ''}</td>
+      <td>${c.phone || ''}</td>
+      <td style="font-size:0.78rem;">${c.aadhaar || '-'}</td>
+      <td style="font-size:0.78rem;">${c.pan || '-'}</td>
+      <td><span class="pill ${c.cibil==='High'?'pill-green':c.cibil==='Low'?'pill-red':'pill-gold'}">${c.cibil || '-'}</span></td>
+      <td>${fmt(due)}</td>
+      <td title="Monthly due + unpaid balance from previous months" style="font-weight:600;color:${carryOver > 0 ? 'var(--red)' : 'var(--text1)'};">${fmt(overallDue)}${carryOver > 0 ? '<div style="font-size:0.65rem;color:var(--text3);font-weight:400;">+' + fmt(carryOver) + ' carry</div>' : ''}</td>
+      <td><input type="number" class="pay-amt-input" value="${paidAmt || ''}" min="0" max="${overallDue}" placeholder="" style="width:80px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:var(--bg2);color:var(--text1);text-align:right;" onchange="updatePaidAmount('${grp}',${mi},${moIdx},this.value,${due},${overallDue})"></td>
+      <td style="color:${pendingAmt > 0 ? 'var(--red)' : 'var(--green)'}; font-weight:500;" id="pending-${grp}-${mi}-${moIdx}">${fmt(pendingAmt)}</td>
+      <td>${stLabel ? '<span class="pill ' + pillClass + '" id="status-' + grp + '-' + mi + '-' + moIdx + '">' + stLabel + '</span>' : '<span id="status-' + grp + '-' + mi + '-' + moIdx + '">–</span>'}</td>
+      <td style="color:var(--green);" id="profit-${grp}-${mi}-${moIdx}">${fmt(profit)}</td>
+      <td><button class="btn btn-secondary btn-sm" style="font-size:0.72rem;padding:3px 10px;" onclick="generateReceipt('${grp}',${mi},${moIdx},'${(c.name||"").replace(/'/g,"\\'")}',${due},${paidAmt})">🧾 Receipt</button></td>
+      <td>
+        <button class="btn btn-sm" title="Send via WhatsApp" style="font-size:0.72rem;padding:3px 8px;background:#25D366;color:#fff;border:none;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" onclick="sendReceiptWhatsApp('${grp}',${mi},${moIdx},'${(c.name||"").replace(/'/g,"\\'")}','${(c.phone||"").replace(/'/g,"\\'")}',${due},${paidAmt})">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+          WhatsApp
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// Navigate to a specific group in Payment Info tab
+function generateReceipt(grp, mi, moIdx, memberName, due, paidAmt) {
+  const meta = GROUP_META[grp];
+  const commission = meta ? meta.commission : 5;
+  const balance = Math.max(0, due - paidAmt);
+  const status = paidAmt >= due ? 'Paid' : paidAmt > 0 ? 'Partial Paid' : 'Overdue';
+  const monthLabel = document.getElementById('pay-month-sel').selectedOptions[0].text;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const receiptNo = 'RCP-' + grp + '-' + (moIdx + 1) + '-' + (mi + 1);
+
+  const receiptWin = window.open('', '_blank', 'width=420,height=600');
+  receiptWin.document.write(`<!DOCTYPE html><html><head><title>Receipt ${receiptNo}</title>
+    <style>
+      body{font-family:'Segoe UI',sans-serif;padding:30px;color:#1a1d28;max-width:380px;margin:0 auto;}
+      h2{text-align:center;margin:0 0 4px;font-size:1.2rem;}
+      .sub{text-align:center;font-size:0.78rem;color:#666;margin-bottom:20px;}
+      .divider{border-top:1px dashed #ccc;margin:14px 0;}
+      .row{display:flex;justify-content:space-between;font-size:0.85rem;padding:4px 0;}
+      .row .label{color:#666;}
+      .row .val{font-weight:600;}
+      .total-row{font-size:1rem;font-weight:700;border-top:2px solid #333;padding-top:8px;margin-top:8px;}
+      .status{display:inline-block;padding:3px 12px;border-radius:12px;font-size:0.78rem;font-weight:600;}
+      .status.paid{background:#d4edda;color:#155724;}
+      .status.partial{background:#fff3cd;color:#856404;}
+      .status.overdue{background:#f8d7da;color:#721c24;}
+      .footer{text-align:center;font-size:0.72rem;color:#999;margin-top:24px;}
+      .print-btn{display:block;margin:20px auto 0;padding:8px 24px;background:#c9952e;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.85rem;}
+      @media print{.print-btn{display:none;}}
+    </style>
+  </head><body>
+    <h2>US Chit Funds</h2>
+    <div class="sub">Payment Receipt</div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Receipt No</span><span class="val">${receiptNo}</span></div>
+    <div class="row"><span class="label">Date</span><span class="val">${dateStr}</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Member</span><span class="val">${memberName}</span></div>
+    <div class="row"><span class="label">Chit Group</span><span class="val">${grp}</span></div>
+    <div class="row"><span class="label">Period</span><span class="val">${monthLabel} (Month ${moIdx + 1})</span></div>
+    <div class="divider"></div>
+    <div class="row"><span class="label">Installment Due</span><span class="val">\u20b9${due.toLocaleString('en-IN')}</span></div>
+    <div class="row"><span class="label">Amount Paid</span><span class="val">\u20b9${paidAmt.toLocaleString('en-IN')}</span></div>
+    <div class="row"><span class="label">Balance</span><span class="val">\u20b9${balance.toLocaleString('en-IN')}</span></div>
+    <div class="row total-row"><span>Status</span><span class="status ${status==='Paid'?'paid':status==='Partial Paid'?'partial':'overdue'}">${status}</span></div>
+    <div class="divider"></div>
+    <div class="footer">Thank you for your payment.<br>This is a computer-generated receipt.</div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+      <button class="print-btn" onclick="window.print()">Print Receipt</button>
+      <button class="print-btn" style="background:#3a6ad4;" onclick="downloadReceipt()">Download PDF</button>
+    </div>
+    <script>
+    function downloadReceipt(){
+      var btn=document.querySelectorAll('.print-btn');
+      btn.forEach(function(b){b.style.display='none';});
+      window.print();
+      setTimeout(function(){btn.forEach(function(b){b.style.display='';});},500);
+    }
+    <\/script>
+  </body></html>`);
+  receiptWin.document.close();
+}
+
+function buildReceiptImage(grp, mi, moIdx, memberName, due, paidAmt) {
+  const meta = GROUP_META[grp] || {};
+  const receiptNo = 'RCP-' + grp + '-' + (moIdx + 1) + '-' + (mi + 1);
+  const pendingAmt = Math.max(0, due - paidAmt);
+  const today = new Date().toLocaleDateString('en-IN');
+  const monthLabel = 'Month ' + (moIdx + 1);
+  const W = 600, H = 760;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  // Background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  // Header band
+  ctx.fillStyle = '#1f6feb';
+  ctx.fillRect(0, 0, W, 90);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 28px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('US Chit Fund', W / 2, 42);
+  ctx.font = '16px Arial, sans-serif';
+  ctx.fillText('Payment Receipt', W / 2, 70);
+  // Body
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#111111';
+  ctx.font = '16px Arial, sans-serif';
+  const rows = [
+    ['Receipt No', receiptNo],
+    ['Date', today],
+    ['Member', memberName],
+    ['Group', grp + (meta.name ? ' (' + meta.name + ')' : '')],
+    ['Installment', monthLabel],
+    ['Due Amount', 'Rs. ' + Number(due).toLocaleString('en-IN')],
+    ['Paid Amount', 'Rs. ' + Number(paidAmt).toLocaleString('en-IN')],
+    ['Balance', 'Rs. ' + Number(pendingAmt).toLocaleString('en-IN')]
+  ];
+  let y = 140;
+  rows.forEach(([k, v]) => {
+    ctx.fillStyle = '#555';
+    ctx.font = '15px Arial, sans-serif';
+    ctx.fillText(k, 50, y);
+    ctx.fillStyle = '#111';
+    ctx.font = 'bold 16px Arial, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(v, W - 50, y);
+    ctx.textAlign = 'left';
+    ctx.strokeStyle = '#e5e7eb';
+    ctx.beginPath(); ctx.moveTo(50, y + 12); ctx.lineTo(W - 50, y + 12); ctx.stroke();
+    y += 50;
+  });
+  // Status pill
+  const status = pendingAmt === 0 ? 'PAID IN FULL' : (paidAmt > 0 ? 'PARTIALLY PAID' : 'UNPAID');
+  const statusColor = pendingAmt === 0 ? '#16a34a' : (paidAmt > 0 ? '#d97706' : '#dc2626');
+  ctx.fillStyle = statusColor;
+  ctx.fillRect(W / 2 - 110, y + 10, 220, 40);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(status, W / 2, y + 36);
+  // Footer
+  ctx.fillStyle = '#666';
+  ctx.font = '13px Arial, sans-serif';
+  ctx.fillText('Thank you for your payment.', W / 2, H - 50);
+  ctx.fillText('This is a computer-generated receipt.', W / 2, H - 30);
+  return { canvas, receiptNo };
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+async function sendReceiptWhatsApp(grp, mi, moIdx, memberName, phone, due, paidAmt) {
+  const meta = GROUP_META[grp] || {};
+  const { canvas, receiptNo } = buildReceiptImage(grp, mi, moIdx, memberName, due, paidAmt);
+  const fileName = receiptNo + '.png';
+  const pendingAmt = Math.max(0, due - paidAmt);
+  const today = new Date().toLocaleDateString('en-IN');
+  const caption = [
+    '*US Chit Fund - Payment Receipt*',
+    '',
+    'Receipt No: ' + receiptNo,
+    'Date: ' + today,
+    'Member: ' + memberName,
+    'Group: ' + grp + (meta.name ? ' (' + meta.name + ')' : ''),
+    'Installment: Month ' + (moIdx + 1),
+    'Due: Rs. ' + Number(due).toLocaleString('en-IN'),
+    'Paid: Rs. ' + Number(paidAmt).toLocaleString('en-IN'),
+    'Balance: Rs. ' + Number(pendingAmt).toLocaleString('en-IN'),
+    '',
+    'Thank you for your payment.'
+  ].join('\n');
+
+  let num = (phone || '').replace(/\D/g, '');
+  if (num && num.length === 10) num = '91' + num;
+
+  // Copy the customer's phone number to clipboard for easy pasting in WhatsApp.
+  if (num) {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(num);
+      }
+    } catch (e) { /* ignore clipboard errors */ }
+  }
+
+  const blob = await canvasToBlob(canvas);
+  const file = new File([blob], fileName, { type: 'image/png' });
+
+  // Try Web Share API with files (works on mobile / supported browsers - attaches image directly)
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'Payment Receipt',
+        text: caption
+      });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+      // fall through to fallback
+    }
+  }
+
+  // Desktop fallback: download the receipt image and open WhatsApp chat with caption pre-filled.
+  // User then attaches the just-downloaded image (one click in WhatsApp Web).
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+  const msg = encodeURIComponent(caption + '\n\n(Receipt image "' + fileName + '" has been downloaded - please attach it to this chat.)');
+  const waUrl = num
+    ? 'https://wa.me/' + num + '?text=' + msg
+    : 'https://wa.me/?text=' + msg;
+  window.open(waUrl, '_blank');
+}
+
+function selectGroupInPayments(grp) {
+  const [sy, sm] = GROUP_START[grp] || [2025, 10];
+  const grpDuration = (GROUP_META[grp] && GROUP_META[grp].duration) || MONTHS;
+  const now = new Date();
+  let targetMonth;
+  const diffMonths = (now.getFullYear() - sy) * 12 + (now.getMonth() - sm);
+  if (diffMonths >= 0 && diffMonths < grpDuration) {
+    targetMonth = now.getFullYear() + '-' + String(now.getMonth()).padStart(2, '0');
+  } else {
+    const d = new Date(sy, sm);
+    targetMonth = d.getFullYear() + '-' + String(d.getMonth()).padStart(2, '0');
+  }
+  const monthSel = document.getElementById('pay-month-sel');
+  if (monthSel.querySelector('option[value="' + targetMonth + '"]')) {
+    monthSel.value = targetMonth;
+  }
+  onPayMonthChange();
+  const groupSel = document.getElementById('pay-group-sel');
+  if (groupSel.querySelector('option[value="' + grp + '"]')) {
+    groupSel.value = grp;
+  }
+  renderPaymentMonthView();
+}
+
+// ── INSTALLMENTS MODAL (per-month installment values) ──
+function showInstallmentsModal(grp) {
+  const meta = GROUP_META[grp] || {};
+  const duration = meta.duration || MONTHS;
+  const members = meta.members || 20;
+  const val = meta.value || 0;
+  const installments = meta.installments && meta.installments.length
+    ? meta.installments
+    : Array.from({ length: duration }, () => Math.round(val / members));
+  const [sy, sm] = GROUP_START[grp] || [2025, 10];
+  const now = new Date();
+  const curIdx = (now.getFullYear() - sy) * 12 + (now.getMonth() - sm); // 0-based current month index
+
+  document.getElementById('installments-title').textContent = 'Group ' + grp + ' – Monthly Installments';
+  const grid = document.getElementById('installments-grid');
+  let html = '';
+  for (let i = 0; i < duration; i++) {
+    const amt = installments[i] != null ? installments[i] : Math.round(val / members);
+    const isCurrent = i === curIdx;
+    const isPast = i < curIdx;
+    const border = isCurrent ? '2px solid var(--accent)' : '1px solid var(--border)';
+    const bg = isCurrent ? 'rgba(232,184,75,0.10)' : 'var(--surface)';
+    const tag = isCurrent ? '<span style="font-size:0.62rem;color:var(--accent);font-weight:600;">CURRENT</span>'
+              : isPast ? '<span style="font-size:0.62rem;color:var(--text2);">Past</span>'
+              : '<span style="font-size:0.62rem;color:var(--text2);">Upcoming</span>';
+    html += '<div style="display:flex;flex-direction:column;gap:4px;padding:10px;border:' + border + ';border-radius:var(--radius-sm);background:' + bg + ';">'
+         +   '<div style="display:flex;justify-content:space-between;align-items:center;">'
+         +     '<label style="font-size:0.72rem;color:var(--text2);">Month ' + (i + 1) + '</label>'
+         +     tag
+         +   '</div>'
+         +   '<div style="font-size:0.95rem;font-weight:600;color:var(--text);">' + fmt(amt) + '</div>'
+         + '</div>';
+  }
+  grid.innerHTML = html;
+  document.getElementById('modal-installments').classList.add('open');
+}
+
+// ── CHIT DETAIL (full payment grid modal) ──
+function openChitDetail(grp) {
+  document.getElementById('chit-detail-title').textContent = 'Group ' + grp + ' – Full Payment Grid';
+  const groupCustomers = customers.filter(c => c.group === grp);
+
+  // Stats
+  let paid = 0, pending = 0, overdue = 0;
+  if (payments[grp]) {
+    payments[grp].forEach(row => row.forEach(s => {
+      if (s === 'paid') paid++;
+      else if (s === 'pending') pending++;
+      else if (s === 'overdue') overdue++;
+    }));
+  }
+  const total = paid + pending + overdue;
+  document.getElementById('chit-detail-stats').innerHTML = `
+    <div class="stat-card green"><div class="stat-label">Paid</div><div class="stat-value">${paid}</div></div>
+    <div class="stat-card gold"><div class="stat-label">Partial Paid</div><div class="stat-value">${pending}</div></div>
+    <div class="stat-card red"><div class="stat-label">Overdue</div><div class="stat-value">${overdue}</div></div>
+    <div class="stat-card blue"><div class="stat-label">Collection Rate</div><div class="stat-value">${total > 0 ? Math.round(paid / total * 100) : 0}<span>%</span></div></div>
+  `;
+
+  // Grid header
+  const months = getMonthLabels(grp);
+  let html = `<div class="payment-month-header">
+    <div>Member</div>
+    ${months.map(m => '<div class="pmh-month">' + m + '</div>').join('')}
+  </div>`;
+
+  // Grid rows
+  groupCustomers.forEach((c, mi) => {
+    html += `<div class="payment-row">
+      <div class="member-cell">
+        <span class="member-num">#${c.memberNum}</span>
+        ${c.name.split(' ')[0]}
+      </div>
+      ${Array.from({length: (GROUP_META[grp] && GROUP_META[grp].duration) || MONTHS}, (_, mo) => {
+        const st = payments[grp] && payments[grp][mi] ? payments[grp][mi][mo] : 'na';
+        const label = st === 'paid' ? '✓' : st === 'pending' ? '!' : st === 'overdue' ? '✕' : '–';
+        return `<div class="payment-cell">
+          <div class="pay-dot ${st}"
+            title="${c.name} · Month ${mo + 1}"
+            onclick="${st !== 'na' ? "editPayment('" + grp + "'," + mi + "," + mo + ",'" + c.name + "')" : ''}"
+          >${label}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  document.getElementById('chit-detail-grid').innerHTML = html;
+  openModal('modal-chit-detail');
+}
+
+function updatePaidAmount(grp, mi, moIdx, val, due, overallDue) {
+  const cap = overallDue != null ? overallDue : due;
+  const amt = Math.max(0, Math.min(cap, parseInt(val) || 0));
+  paidAmounts[grp][mi][moIdx] = amt;
+  const pending = Math.max(0, cap - amt);
+  const newStatus = amt >= cap ? 'paid' : amt > 0 ? 'pending' : 'overdue';
+  payments[grp][mi][moIdx] = newStatus;
+  const profit = amt > 0 ? Math.round(amt * ((GROUP_META[grp] && GROUP_META[grp].commission || 5) / 100)) : 0;
+  // Update cells inline
+  const pEl = document.getElementById('pending-' + grp + '-' + mi + '-' + moIdx);
+  if (pEl) { pEl.textContent = fmt(pending); pEl.style.color = pending > 0 ? 'var(--red)' : 'var(--green)'; }
+  const sEl = document.getElementById('status-' + grp + '-' + mi + '-' + moIdx);
+  if (sEl) { sEl.textContent = newStatus==='paid'?'Paid':newStatus==='pending'?'Partial Paid':'Overdue'; sEl.className = 'pill ' + (newStatus==='paid'?'pill-green':newStatus==='pending'?'pill-gold':'pill-red'); }
+  const prEl = document.getElementById('profit-' + grp + '-' + mi + '-' + moIdx);
+  if (prEl) { prEl.textContent = fmt(profit); }
+  // Save to Firebase
+  fbSetPayment(grp, mi, moIdx, newStatus)
+    .then(() => toast('Payment updated!'))
+    .catch(e => toast('Error: ' + e.message));
+}
+
+function editPayment(group, memberIdx, month, memberName) {
+  editTarget = {group, memberIdx, month};
+  document.getElementById('ep-member').textContent = memberName;
+  document.getElementById('ep-group-month').textContent = `${group} · Month ${month+1}`;
+  document.getElementById('ep-status').value = payments[group][memberIdx][month];
+  const epMeta = GROUP_META[group];
+  const epInstallments = epMeta ? (epMeta.installments || []) : [];
+  const epValue = epMeta ? epMeta.value : (DENOM[parseInt(group[0])] || 100000);
+  const epMembers = epMeta ? epMeta.members : MEMBERS;
+  document.getElementById('ep-amount').value = epInstallments.length > month ? epInstallments[month] : (epValue / epMembers);
+  document.getElementById('ep-date').value = new Date().toISOString().split('T')[0];
+  openModal('modal-edit-payment');
+}
+
+function savePayment() {
+  if (editTarget) {
+    const {group, memberIdx, month} = editTarget;
+    const newStatus = document.getElementById('ep-status').value;
+    const installment = DENOM[parseInt(group[0])] / MEMBERS;
+    payments[group][memberIdx][month] = newStatus;
+    paidAmounts[group][memberIdx][month] = newStatus === 'paid' ? installment : 0;
+    closeModal('modal-edit-payment');
+    renderPaymentMonthView();
+    // Refresh detail grid if open
+    if (document.getElementById('modal-chit-detail').classList.contains('open')) {
+      openChitDetail(group);
+    }
+    fbSetPayment(group, memberIdx, month, newStatus)
+      .then(() => toast('Payment saved to Firestore!'))
+      .catch(e => toast('Error: ' + e.message));
+  }
+}
+
+function markAllPaidForMonth() {
+  const monthKey = document.getElementById('pay-month-sel').value;
+  const grp = document.getElementById('pay-group-sel').value;
+  if (!grp) return;
+  const matches = getGroupsForMonth(monthKey);
+  const match = matches.find(m => m.group === grp);
+  if (!match) return;
+  const moIdx = match.monthIdx;
+  const den = parseInt(grp[0]);
+  const installment = DENOM[den] / MEMBERS;
+  const updatedRows = {};
+  payments[grp].forEach((row, mi) => {
+    if (row[moIdx] !== 'na') {
+      row[moIdx] = 'paid';
+      paidAmounts[grp][mi][moIdx] = installment;
+      updatedRows[mi] = [...row];
+    }
+  });
+  renderPaymentMonthView();
+  fbSetPaymentBulk(grp, updatedRows)
+    .then(() => toast('All payments marked as paid in Firestore!'))
+    .catch(e => toast('Error: ' + e.message));
+}
+
+// ── AUCTIONS ──
+function renderAuctions() {
+  const el = document.getElementById('auction-table');
+  if (!el) return; // auctions section is commented out
+  el.innerHTML = auctionData.map(a => `
+    <tr>
+      <td><span class="pill pill-blue">${a.group}</span></td>
+      <td>${a.month}</td>
+      <td>${a.date}</td>
+      <td>${a.winner}</td>
+      <td>${fmt(a.bid)}</td>
+      <td>${fmt(a.value)}</td>
+      <td>${fmt(a.comm)}</td>
+      <td>${fmt(a.div)}/member</td>
+      <td><span class="pill ${a.status==='Completed'?'pill-green':'pill-gold'}">${a.status}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="toast('Viewing auction record')">View</button></td>
+    </tr>
+  `).join('');
+}
+
+// ── THEME TOGGLE ──
+function toggleTheme() {
+  document.documentElement.classList.toggle('dark-mode');
+  const isDark = document.documentElement.classList.contains('dark-mode');
+  document.getElementById('theme-icon').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+}
+(function initTheme() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') {
+    document.documentElement.classList.add('dark-mode');
+    document.getElementById('theme-icon').textContent = '🌙';
+  }
+})();
+
+// ── INIT ──
+renderDashboard();
+renderCustomers();
+renderChitGroups();
+initPaymentFilters();
+renderAuctions();
+
+// Start Firestore real-time listeners
+initFirestoreListeners();
+</script>
+</body>
+</html>
